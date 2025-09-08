@@ -33,7 +33,7 @@ function Event({ id, affiliateID }: { id: string, affiliateID?: string }) {
     const setCurrentId = useSetAtom(currentIdAtom);
 
     setCurrentId(id);
-    const [event, setEvent] = React.useState<IEventType | any>(null);
+    const [event, setEvent] = React.useState<IEventType>({} as IEventType);
     const [ticketType, setTicketType] = React.useState<string | null>(null);
     const [tickets, setTickets] = React.useState<IProductTypeData[]>([]);
     const [showModal, setShowModal] = useAtom(showTicketModalAtom);
@@ -155,7 +155,7 @@ function Event({ id, affiliateID }: { id: string, affiliateID?: string }) {
                                         {((event?.eventMemberRole !== "COLLABORATOR") && !event?.isOrganizer && event?.eventMemberRole !== "ADMIN") && (
                                             <Flex bg={mainBackgroundColor} bottom={"0px"} w={"full"} flexDir={"column"} rounded={"16px"} gap={"3"} p={"3"} borderWidth={"1px"} borderColor={"#DEDEDE"} style={{ boxShadow: "0px 20px 70px 0px #C2C2C21A" }} >
                                                 <Flex w={"full"} gap={"2"} flexDir={"column"} >
-                                                    <Text fontWeight={"500"} fontSize={["xs", "xs", "sm"]} >See ticket available for this event</Text>
+                                                    <Text fontWeight={"500"} fontSize={["xs", "xs", "sm"]} >See ticket{event?.productTypeData?.length > 1 ? "s" : ""} available for this event</Text>
                                                     <Flex w={"full"} justifyContent={"end"} >
                                                         <Button onClick={handlePayment} w="full" h="40px" fontWeight={"semibold"} borderRadius={'full'} bgColor="chasescrollBlue" color="white">Select Ticket Here</Button>
                                                     </Flex>
