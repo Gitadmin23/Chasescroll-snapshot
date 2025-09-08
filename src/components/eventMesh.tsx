@@ -67,7 +67,7 @@ export default function EventMesh({
           </Text>
         ) : (
           <Text fontSize={["14px", "14px", "20px"]} fontWeight={"bold"}>
-            Shop the {capitalizeFLetter(data?.eventName)} kiosk
+            Shop the {capitalizeFLetter(data?.eventName)}
           </Text>
         )}
         {/* {!data?.isOrganizer && (
