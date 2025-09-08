@@ -6,8 +6,7 @@ import {
     HStack,
     Text,
 } from '@chakra-ui/react'
-import React, { useState } from 'react'
-import { Eye, EyeSlash } from 'iconsax-reactjs'
+import React from 'react' 
 import { signIn, useSession } from 'next-auth/react'
 import { useMutation } from '@tanstack/react-query'
 import httpService from '@/services/httpService'
