@@ -17,6 +17,7 @@ export default function DescriptionCard({ description, limit, label, width, tick
             )}
             <Flex
                 fontSize={ticket ? "12px": "14px"}
+                flexDirection={"column"}
                 dangerouslySetInnerHTML={{ __html: description }}
             />
             {/* <Text fontSize={"14px"} >{textLimit(capitalizeFLetter(description), textSize)}{description?.length > limit && (<span role='button' style={{ fontWeight: "700" }} onClick={() => setTextSize((prev) => prev === description?.length ? limit : description?.length)} >{description?.length !== textSize ? "more" : "...less"}</span>)}</Text> */}
