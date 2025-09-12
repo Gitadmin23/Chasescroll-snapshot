@@ -31,6 +31,7 @@ import useCustomTheme from "@/hooks/useTheme";
 import { formatNumberWithK } from "@/utils/formatNumberWithK";
 import ProductImageScroller from "../../productImageScroller";
 import CustomButton from "../../customButton";
+import DescriptionCard from "../../description";
 
 interface TicketSelectionProps {
   eventTitle?: string;
@@ -90,14 +91,13 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
         if (
           ticket.quantity + 1 >
           Number(eventTicket?.totalNumberOfTickets) -
-            Number(eventTicket?.ticketsSold)
+          Number(eventTicket?.ticketsSold)
         ) {
           toaster.create({
             title: "Error",
-            description: `Oops! We only have ${
-              Number(eventTicket?.totalNumberOfTickets) -
+            description: `Oops! We only have ${Number(eventTicket?.totalNumberOfTickets) -
               Number(eventTicket?.ticketsSold)
-            } of this tickets left. We’ve added the available ticket amount to your cart.`,
+              } of this tickets left. We’ve added the available ticket amount to your cart.`,
             type: "error",
           });
           return;
@@ -251,7 +251,7 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                   ) {
                     return (
                       <Flex
-                        flexDir={["column", "column", "row"]}
+                        flexDir={["row", "row", "row"]}
                         gap={"2"}
                         _hover={{ borderColor: primaryColor }}
                         key={index}
@@ -259,20 +259,19 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                         borderWidth={"1px"}
                         justifyContent={"space-between"}
                         rounded={"8px"}
-                        px={"4"}
-                        py={"4"}
+                        minH={"110px"} height={"fit"} px={"4"} py={"4"}
                       >
-                        <Flex flexDir={"column"} gap={"2"}>
+                        <Flex flexDir={"column"} gap={"2"} h={"full"} justifyContent={"center"} >
                           <Text fontWeight={"semibold"}>
-                            {capitalizeFLetter(item.ticketType)}{" "}
-                            {formatNumberWithK(item?.ticketPrice, false)}
+                            {capitalizeFLetter(item.ticketType)}{" - "}
+                            {formatNumber(item?.ticketPrice)}
                           </Text>
                           {item.ticketType === "Early Bird" ? (
                             <>
                               {Number(item?.totalNumberOfTickets) -
                                 Number(item?.ticketsSold) ===
                                 0 ||
-                              new Date(Number(item?.endDate)) < new Date() ? (
+                                new Date(Number(item?.endDate)) < new Date() ? (
                                 <Badge
                                   maxW={"100%"}
                                   w={"fit-content"}
@@ -303,7 +302,7 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                             <>
                               {Number(item?.totalNumberOfTickets) -
                                 Number(item?.ticketsSold) ===
-                              0 ? (
+                                0 ? (
                                 <Badge
                                   maxW={"100%"}
                                   w={"fit-content"}
@@ -330,45 +329,53 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                               )}
                             </>
                           )}
+                          {item?.description && (
+                            <>
+                              <Flex display={["none", "none", "flex"]} >
+                                <DescriptionCard ticket={true} limit={1000} label='' description={item?.description} />
+                              </Flex>
+                              <Flex display={["flex", "flex", "none"]} >
+                                <DescriptionCard ticket={true} limit={750} label='' description={item?.description} />
+                              </Flex>
+                            </>
+                          )}
                         </Flex>
-                        <Flex gap={"3"} alignItems={"center"} mx={"auto"}>
-                          <Flex gap={"3"} alignItems={"center"}>
-                            <IconButton
-                              disabled={!getTicket(item.ticketType)}
-                              onClick={() => decrement(item.ticketType)}
-                              bgColor={secondaryBackgroundColor}
-                              color={headerTextColor}
-                              rounded={"full"}
-                              size="sm"
-                            >
-                              {/* <LuMinus /> */}
-                              <Text fontWeight={"500"} fontSize={"25px"}>
-                                -
-                              </Text>
-                            </IconButton>
-                            {getTicket(item.ticketType)?.quantity
-                              ? getTicket(item?.ticketType)?.quantity
-                              : 0}
-                            <IconButton
-                              disabled={disabledCheck(item)}
-                              onClick={() => increment(item.ticketType)}
-                              bgColor={secondaryBackgroundColor}
-                              color={headerTextColor}
-                              rounded={"full"}
-                              size="sm"
-                            >
-                              <Text fontWeight={"500"} fontSize={"25px"}>
-                                +
-                              </Text>
-                            </IconButton>
-                          </Flex>
+                        <Flex gap={"3"} alignItems={"center"} h={"fit-content"} mt={"3"} >
+                          <IconButton
+                            disabled={!getTicket(item.ticketType)}
+                            onClick={() => decrement(item.ticketType)}
+                            bgColor={secondaryBackgroundColor}
+                            color={headerTextColor}
+                            rounded={"full"}
+                            size="sm"
+                          >
+                            {/* <LuMinus /> */}
+                            <Text fontWeight={"500"} fontSize={"25px"}>
+                              -
+                            </Text>
+                          </IconButton>
+                          {getTicket(item.ticketType)?.quantity
+                            ? getTicket(item?.ticketType)?.quantity
+                            : 0}
+                          <IconButton
+                            disabled={disabledCheck(item)}
+                            onClick={() => increment(item.ticketType)}
+                            bgColor={secondaryBackgroundColor}
+                            color={headerTextColor}
+                            rounded={"full"}
+                            size="sm"
+                          >
+                            <Text fontWeight={"500"} fontSize={"25px"}>
+                              +
+                            </Text>
+                          </IconButton>
                         </Flex>
                       </Flex>
                     );
                   } else if (item.ticketType !== "Early Bird") {
                     return (
                       <Flex
-                        flexDir={["column", "column", "row"]}
+                        flexDir={["row", "row", "row"]}
                         gap={"2"}
                         _hover={{ borderColor: primaryColor }}
                         key={index}
@@ -376,20 +383,19 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                         borderWidth={"1px"}
                         justifyContent={"space-between"}
                         rounded={"8px"}
-                        px={"4"}
-                        py={"4"}
+                        minH={"110px"} height={"fit"} px={"4"} py={"4"}
                       >
-                        <Flex flexDir={"column"} gap={"2"}>
+                        <Flex flexDir={"column"} gap={"2"} h={"full"} justifyContent={"center"} >
                           <Text fontWeight={"semibold"}>
-                            {capitalizeFLetter(item.ticketType)}{" "}
-                            {formatNumberWithK(item?.ticketPrice, false)}
+                            {capitalizeFLetter(item.ticketType)}{" - "}
+                            {formatNumber(item?.ticketPrice)}
                           </Text>
                           {item.ticketType === "Early Bird" ? (
                             <>
                               {Number(item?.totalNumberOfTickets) -
                                 Number(item?.ticketsSold) ===
                                 0 ||
-                              new Date(Number(item?.endDate)) < new Date() ? (
+                                new Date(Number(item?.endDate)) < new Date() ? (
                                 <Badge
                                   maxW={"100%"}
                                   w={"fit-content"}
@@ -420,7 +426,7 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                             <>
                               {Number(item?.totalNumberOfTickets) -
                                 Number(item?.ticketsSold) ===
-                              0 ? (
+                                0 ? (
                                 <Badge
                                   maxW={"100%"}
                                   w={"fit-content"}
@@ -447,8 +453,18 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                               )}
                             </>
                           )}
+                          {item?.description && (
+                            <>
+                              <Flex display={["none", "none", "flex"]} >
+                                <DescriptionCard ticket={true} limit={1000} label='' description={item?.description} />
+                              </Flex>
+                              <Flex display={["flex", "flex", "none"]} >
+                                <DescriptionCard ticket={true} limit={750} label='' description={item?.description} />
+                              </Flex>
+                            </>
+                          )}
                         </Flex>
-                        <Flex gap={"3"} alignItems={"center"} mx={"auto"}>
+                        <Flex gap={"3"} alignItems={"center"} h={"fit-content"} mt={"3"} >
                           <IconButton
                             disabled={!getTicket(item.ticketType)}
                             onClick={() => decrement(item.ticketType)}
@@ -544,7 +560,7 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                         <Text fontWeight="semibold">
                           {formatNumber(
                             (getTicketPrice(item.ticketType) as number) *
-                              item.quantity
+                            item.quantity
                           )}
                         </Text>
                       </Flex>
@@ -637,22 +653,20 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                         w={"full"}
                         borderWidth={"1px"}
                         justifyContent={"space-between"}
-                        alignItems={"center"}
                         rounded={"8px"}
-                        px={"4"}
-                        height={"110px"}
+                        minH={"110px"} height={"fit"} px={"4"} py={"4"}
                       >
-                        <Flex flexDir={"column"} gap={"2"}>
+                        <Flex flexDir={"column"} gap={"2"} h={"full"} justifyContent={"center"} >
                           <Text fontWeight={"semibold"}>
-                            {capitalizeFLetter(item.ticketType)}{" "}
-                            {formatNumberWithK(item?.ticketPrice, false)}
+                            {capitalizeFLetter(item.ticketType)}{" - "}
+                            {formatNumber(item?.ticketPrice)}
                           </Text>
                           {item.ticketType === "Early Bird" ? (
                             <>
                               {Number(item?.totalNumberOfTickets) -
                                 Number(item?.ticketsSold) ===
                                 0 ||
-                              new Date(Number(item?.endDate)) < new Date() ? (
+                                new Date(Number(item?.endDate)) < new Date() ? (
                                 <Badge
                                   colorPalette={"red"}
                                   fontSize={"sm"}
@@ -677,7 +691,7 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                             <>
                               {Number(item?.totalNumberOfTickets) -
                                 Number(item?.ticketsSold) ===
-                              0 ? (
+                                0 ? (
                                 <Badge
                                   colorPalette={"red"}
                                   fontSize={"sm"}
@@ -700,8 +714,18 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                               )}
                             </>
                           )}
+                          {item?.description && (
+                            <>
+                              <Flex display={["none", "none", "flex"]} >
+                                <DescriptionCard ticket={true} limit={1000} label='' description={item?.description} />
+                              </Flex>
+                              <Flex display={["flex", "flex", "none"]} >
+                                <DescriptionCard ticket={true} limit={750} label='' description={item?.description} />
+                              </Flex>
+                            </>
+                          )}
                         </Flex>
-                        <Flex gap={"3"} alignItems={"center"}>
+                        <Flex gap={"3"} alignItems={"center"} h={"fit-content"} mt={"3"} >
                           <IconButton
                             disabled={!getTicket(item.ticketType)}
                             onClick={() => decrement(item.ticketType)}
@@ -741,22 +765,21 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                         w={"full"}
                         borderWidth={"1px"}
                         justifyContent={"space-between"}
-                        alignItems={"center"}
+                        // alignItems={"center"}
                         rounded={"8px"}
-                        px={"4"}
-                        height={"110px"}
+                        minH={"110px"} height={"fit"} px={"4"} py={"4"}
                       >
-                        <Flex flexDir={"column"} gap={"2"}>
+                        <Flex flexDir={"column"} gap={"2"} h={"full"} justifyContent={"center"} >
                           <Text fontWeight={"semibold"}>
-                            {capitalizeFLetter(item.ticketType)}{" "}
-                            {formatNumberWithK(item?.ticketPrice, false)}
+                            {capitalizeFLetter(item.ticketType)}{" - "}
+                            {formatNumber(item?.ticketPrice)}
                           </Text>
                           {item.ticketType === "Early Bird" ? (
                             <>
                               {Number(item?.totalNumberOfTickets) -
                                 Number(item?.ticketsSold) ===
                                 0 ||
-                              new Date(Number(item?.endDate)) < new Date() ? (
+                                new Date(Number(item?.endDate)) < new Date() ? (
                                 <Badge
                                   colorPalette={"red"}
                                   fontSize={"sm"}
@@ -781,7 +804,7 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                             <>
                               {Number(item?.totalNumberOfTickets) -
                                 Number(item?.ticketsSold) ===
-                              0 ? (
+                                0 ? (
                                 <Badge
                                   colorPalette={"red"}
                                   fontSize={"sm"}
@@ -804,8 +827,18 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                               )}
                             </>
                           )}
+                          {item?.description && (
+                            <>
+                              <Flex display={["none", "none", "flex"]} >
+                                <DescriptionCard ticket={true} limit={1000} label='' description={item?.description} />
+                              </Flex>
+                              <Flex display={["flex", "flex", "none"]} >
+                                <DescriptionCard ticket={true} limit={750} label='' description={item?.description} />
+                              </Flex>
+                            </>
+                          )}
                         </Flex>
-                        <Flex gap={"3"} alignItems={"center"}>
+                        <Flex gap={"3"} alignItems={"center"} h={"fit-content"} mt={"3"} >
                           <IconButton
                             disabled={!getTicket(item.ticketType)}
                             onClick={() => decrement(item.ticketType)}
@@ -921,7 +954,7 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                         <Text fontWeight="semibold">
                           {formatNumber(
                             (getTicketPrice(item.ticketType) as number) *
-                              item.quantity
+                            item.quantity
                           )}
                         </Text>
                       </Flex>

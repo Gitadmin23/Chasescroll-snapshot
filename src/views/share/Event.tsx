@@ -21,16 +21,7 @@ import { Image, Text } from "@chakra-ui/react";
 import React, { useState } from "react";
 import { AxiosResponse } from "axios";
 import { PaginatedResponse } from "@/models/PaginatedResponse";
-import { IEventType, IProductTypeData } from "@/models/Event";
-import { RESOURCE_URL } from "@/constants";
-import {
-    ArrowLeft,
-    ArrowLeft2,
-    Location,
-    Calendar1,
-    ArrowDown2,
-} from "iconsax-reactjs";
-import ChasescrollBox from "@/components/Custom/ChasescrollBox";
+import { IEventType, IProductTypeData } from "@/models/Event"; 
 import MapComponent from "@/components/Custom/MapComponent";
 import { capitalizeFLetter } from "@/utils/capitalizeLetter";
 import { useRouter } from "next/navigation";
@@ -48,11 +39,7 @@ import { toaster } from "@/components/ui/toaster";
 import { STORAGE_KEYS } from "@/utils/StorageKeys";
 import EventDate from "@/components/Custom/eventDate";
 import EventCreator from "@/components/Custom/eventCreator";
-import DescriptionCard from "@/components/Custom/description";
-import { IPinnedFundrasier } from "@/models/PinnedFundraiser";
-import { IPinnedProduct } from "@/models/PinnedProduct";
-import { formatNumber } from "@/utils/formatNumber";
-import CustomText from "@/components/Custom/CustomText";
+import DescriptionCard from "@/components/Custom/description"; 
 import useCustomTheme from "@/hooks/useTheme";
 import EventLocation from "@/components/Custom/eventLocation";
 import ProductImageScroller from "@/components/Custom/productImageScroller";

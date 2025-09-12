@@ -76,7 +76,8 @@ export interface IProductTypeData {
     endDate?: string | number,
     endTime?: string | number,
     startDate?: string | number,
-    startTime?: string | number
+    startTime?: string | number,
+    description: string
 }
 
 export interface IEventTicket {
