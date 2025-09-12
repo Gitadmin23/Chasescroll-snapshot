@@ -332,10 +332,10 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                           {item?.description && (
                             <>
                               <Flex display={["none", "none", "flex"]} >
-                                <DescriptionCard ticket={true} limit={1000} label='' description={item?.description} />
+                                <DescriptionCard ticket={true} limit={75} label='' description={item?.description} />
                               </Flex>
                               <Flex display={["flex", "flex", "none"]} >
-                                <DescriptionCard ticket={true} limit={750} label='' description={item?.description} />
+                                <DescriptionCard ticket={true} limit={75} label='' description={item?.description} />
                               </Flex>
                             </>
                           )}
@@ -456,10 +456,10 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                           {item?.description && (
                             <>
                               <Flex display={["none", "none", "flex"]} >
-                                <DescriptionCard ticket={true} limit={1000} label='' description={item?.description} />
+                                <DescriptionCard ticket={true} limit={75} label='' description={item?.description} />
                               </Flex>
                               <Flex display={["flex", "flex", "none"]} >
-                                <DescriptionCard ticket={true} limit={750} label='' description={item?.description} />
+                                <DescriptionCard ticket={true} limit={75} label='' description={item?.description} />
                               </Flex>
                             </>
                           )}
@@ -717,10 +717,10 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                           {item?.description && (
                             <>
                               <Flex display={["none", "none", "flex"]} >
-                                <DescriptionCard ticket={true} limit={1000} label='' description={item?.description} />
+                                <DescriptionCard ticket={true} limit={75} label='' description={item?.description} />
                               </Flex>
                               <Flex display={["flex", "flex", "none"]} >
-                                <DescriptionCard ticket={true} limit={750} label='' description={item?.description} />
+                                <DescriptionCard ticket={true} limit={75} label='' description={item?.description} />
                               </Flex>
                             </>
                           )}
@@ -830,10 +830,10 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                           {item?.description && (
                             <>
                               <Flex display={["none", "none", "flex"]} >
-                                <DescriptionCard ticket={true} limit={1000} label='' description={item?.description} />
+                                <DescriptionCard ticket={true} limit={75} label='' description={item?.description} />
                               </Flex>
                               <Flex display={["flex", "flex", "none"]} >
-                                <DescriptionCard ticket={true} limit={750} label='' description={item?.description} />
+                                <DescriptionCard ticket={true} limit={75} label='' description={item?.description} />
                               </Flex>
                             </>
                           )}
