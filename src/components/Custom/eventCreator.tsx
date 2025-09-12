@@ -20,7 +20,7 @@ export default function EventCreator(props: IEventType) {
     } = useCustomTheme();
 
     return (
-        <Flex w={["130px", "fit-content", isAdmin ? "full" : "full"]} gap={"6"} bgColor={[mainBackgroundColor, mainBackgroundColor, secondaryBackgroundColor]} rounded={"64px"} alignItems={["center"]} h={["fit-content", "fit-content", "86px"]} px={["0px", "0px", "4"]} py={["0px", "0px", "3"]} >
+        <Flex w={["130px", "fit-content", isAdmin ? "full" : "full"]} gap={"6"} bgColor={[mainBackgroundColor, mainBackgroundColor, secondaryBackgroundColor]} rounded={"64px"} alignItems={["center"]} h={["fit-content", "fit-content"]} px={["0px", "0px", "4"]} py={["0px", "0px", "3"]} >
             <Flex position={"relative"} border={"0px solid #CDD3FD"} rounded={"full"} alignItems={"center"} gap={"3"} >
                 <Flex width={"fit-content"} position={"relative"} >
                     <Avatar.Root size={"md"} rounded={"full"} roundedTopRight={"0px"} >
