@@ -89,7 +89,11 @@ function AccountSetup() {
       lastName: userDetails?.lastName || "",
       email: userDetails?.email || "",
     },
-    onSubmit: (data) => {
+    onSubmit: (data: { 
+    firstName: string,
+    lastName: string,
+    email: string
+  }) => {
       if (isLoggedIn) {
         if (affiliateID) {
           createTicket({
@@ -486,16 +490,17 @@ function AccountSetup() {
                   {showLink && (
                     <HStack mt="10px">
                       <Text color="red">
-                        You already have an account on chasecroll, for security
+                        You already have an account on chasecroll, For security
                         reasons
                       </Text>
                       <Text
                         color="primaryColor"
                         cursor={"pointer"}
                         onClick={() => setStep(3)}
+                        fontWeight={"black"}
                         textDecorationLine={"underline"}
                       >
-                        Sign in
+                        {("Login")?.replace("", " ")}
                       </Text>
                     </HStack>
                   )}
@@ -513,6 +518,7 @@ function AccountSetup() {
                   size="lg"
                   borderRadius="full"
                   px={8}
+                  disabled={values?.email && values?.firstName && values?.lastName ? false : true}
                   loading={
                     isPending ||
                     createTicketIsLoading ||
