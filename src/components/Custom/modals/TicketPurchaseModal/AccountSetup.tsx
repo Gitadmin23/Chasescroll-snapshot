@@ -39,6 +39,7 @@ import { STORAGE_KEYS } from "@/utils/StorageKeys";
 import { ITicketCreatedModel } from "@/models/TicketCreatedModel";
 import PaymentButton from "../../PaymentButton";
 import { IUser } from "@/models/User";
+import useCustomTheme from "@/hooks/useTheme";
 
 function AccountSetup() {
   const [step, setStep] = useAtom(ticketurchaseStepAtom);
@@ -48,6 +49,9 @@ function AccountSetup() {
   const [canPay, setCanPay] = useAtom(canPayAtom);
   const [paystackDetails, setPaystackDetails] = useAtom(paystackDetailsAtom);
   const [selectedTickets, setSelectedTickets] = useAtom(selectedTicketsAtom);
+
+  const { primaryColor } = useCustomTheme()
+
   const [createTicketIsLoading, setCreateTicketIsLoading] =
     React.useState(false);
   const setCreatedTicket = useSetAtom(createdTicketAtom);
@@ -491,17 +495,16 @@ function AccountSetup() {
                     <HStack mt="10px">
                       <Text color="red">
                         You already have an account on chasecroll, For security
-                        reasons
+                        reasons <span onClick={() => setStep(3)} style={{ cursor: "pointer", color: primaryColor, textDecoration: "underline", fontWeight: "bold" }} >{("Login")?.replace("", " ")}</span>
                       </Text>
-                      <Text
+                      {/* <Text
                         color="primaryColor"
                         cursor={"pointer"}
-                        onClick={() => setStep(3)}
+                        
                         fontWeight={"black"}
                         textDecorationLine={"underline"}
                       >
-                        {("Login")?.replace("", " ")}
-                      </Text>
+                      </Text> */}
                     </HStack>
                   )}
                 </Box>
@@ -516,6 +519,7 @@ function AccountSetup() {
                   h="60px"
                   bgColor="primaryColor"
                   size="lg"
+                  color={"white"}
                   borderRadius="full"
                   px={8}
                   disabled={values?.email && values?.firstName && values?.lastName ? false : true}
