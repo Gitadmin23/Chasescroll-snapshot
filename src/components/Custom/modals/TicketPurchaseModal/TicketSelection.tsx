@@ -268,8 +268,7 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                           </Text>
                           {item.ticketType === "Early Bird" ? (
                             <>
-                              {Number(item?.totalNumberOfTickets) -
-                                Number(item?.ticketsSold) ===
+                              {Number(item?.totalNumberOfTickets) ===
                                 0 ||
                                 new Date(Number(item?.endDate)) < new Date() ? (
                                 <Badge
@@ -300,8 +299,7 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                             </>
                           ) : (
                             <>
-                              {Number(item?.totalNumberOfTickets) -
-                                Number(item?.ticketsSold) ===
+                              {Number(item?.totalNumberOfTickets) ===
                                 0 ? (
                                 <Badge
                                   maxW={"100%"}
@@ -323,8 +321,7 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                                   rounded={"full"}
                                 >
                                   Total Tickets avaliable -{" "}
-                                  {Number(item?.totalNumberOfTickets) -
-                                    Number(item?.ticketsSold)}
+                                  {Number(item?.totalNumberOfTickets)}
                                 </Badge>
                               )}
                             </>
@@ -392,8 +389,7 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                           </Text>
                           {item.ticketType === "Early Bird" ? (
                             <>
-                              {Number(item?.totalNumberOfTickets) -
-                                Number(item?.ticketsSold) ===
+                              {Number(item?.totalNumberOfTickets) ===
                                 0 ||
                                 new Date(Number(item?.endDate)) < new Date() ? (
                                 <Badge
@@ -424,8 +420,7 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                             </>
                           ) : (
                             <>
-                              {Number(item?.totalNumberOfTickets) -
-                                Number(item?.ticketsSold) ===
+                              {Number(item?.totalNumberOfTickets) ===
                                 0 ? (
                                 <Badge
                                   maxW={"100%"}
@@ -447,8 +442,7 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                                   rounded={"full"}
                                 >
                                   Total Tickets avaliable -{" "}
-                                  {Number(item?.totalNumberOfTickets) -
-                                    Number(item?.ticketsSold)}
+                                  {Number(item?.totalNumberOfTickets)}
                                 </Badge>
                               )}
                             </>
@@ -663,8 +657,7 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                           </Text>
                           {item.ticketType === "Early Bird" ? (
                             <>
-                              {Number(item?.totalNumberOfTickets) -
-                                Number(item?.ticketsSold) ===
+                              {Number(item?.totalNumberOfTickets) ===
                                 0 ||
                                 new Date(Number(item?.endDate)) < new Date() ? (
                                 <Badge
@@ -689,8 +682,7 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                             </>
                           ) : (
                             <>
-                              {Number(item?.totalNumberOfTickets) -
-                                Number(item?.ticketsSold) ===
+                              {Number(item?.totalNumberOfTickets) ===
                                 0 ? (
                                 <Badge
                                   colorPalette={"red"}
@@ -708,8 +700,7 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                                   rounded={"full"}
                                 >
                                   Total Tickets avaliable -{" "}
-                                  {Number(item?.totalNumberOfTickets) -
-                                    Number(item?.ticketsSold)}
+                                  {Number(item?.totalNumberOfTickets)}
                                 </Badge>
                               )}
                             </>
@@ -776,8 +767,7 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                           </Text>
                           {item.ticketType === "Early Bird" ? (
                             <>
-                              {Number(item?.totalNumberOfTickets) -
-                                Number(item?.ticketsSold) ===
+                              {Number(item?.totalNumberOfTickets) ===
                                 0 ||
                                 new Date(Number(item?.endDate)) < new Date() ? (
                                 <Badge
@@ -802,8 +792,7 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                             </>
                           ) : (
                             <>
-                              {Number(item?.totalNumberOfTickets) -
-                                Number(item?.ticketsSold) ===
+                              {Number(item?.totalNumberOfTickets) ===
                                 0 ? (
                                 <Badge
                                   colorPalette={"red"}
@@ -821,8 +810,7 @@ const TicketSelection: React.FC<TicketSelectionProps> = ({
                                   rounded={"full"}
                                 >
                                   Total Tickets avaliable -{" "}
-                                  {Number(item?.totalNumberOfTickets) -
-                                    Number(item?.ticketsSold)}
+                                  {Number(item?.totalNumberOfTickets)}
                                 </Badge>
                               )}
                             </>

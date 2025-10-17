@@ -32,9 +32,6 @@ import { textLimit } from '@/utils/textlimiter';
 import GetCreatorData from '@/components/getCreatorData';
 
 function Fundraiser({ id }: { id: string }) {
-
-    const router = useRouter();
-    const session = useSession();
     const setFundRaiser = useSetAtom(activeFundRaiserAtom);
     const [currentStep, setCurrentStep] = useAtom(ticketurchaseStepAtom);
     const {
@@ -55,6 +52,9 @@ function Fundraiser({ id }: { id: string }) {
             }
         })
     })
+
+    console.log(data);
+    
 
     React.useEffect(() => {
         // INITIALIZE VALUES IF THEY EXIST
@@ -88,104 +88,6 @@ function Fundraiser({ id }: { id: string }) {
     }, [event?.name]);
 
     return (
-        // <Box w="full" h="full" p={['0px', '0px', 6, 6]}>
-        //     <FundRaiserModal isOpen={showModal} onClose={() => setShowModal(false)} type='FUNDRAISER' />
-        //     <Head>
-        //         <title>Fundraiser | {event?.name || 'Event'}</title>
-        //     </Head>
-        //     <Container maxW={['100%', '100%', '70%', '70%']} p="10px">
-        //         <HStack alignItems={'center'} mb='20px'>
-        //             <ArrowLeft2 onClick={() => router.back()} cursor={'pointer'} variant='Outline' size='30px' />
-        //             <Heading>Fundraising</Heading>
-        //             {!isLoading && !isError && (
-        //                 <Heading color='primaryColor'> / {event?.name}</Heading>
-        //             )}
-        //         </HStack>
-        //         {!isLoading && !isError && data?.data && (
-        //             <Flex w='full' h="full" spaceX={[1, 1, 6, 6]} mt="10px" direction={['column', 'column', 'row', 'row']}>
-        //                 <Box flex={1} h="full">
-        //                     <Box width={'full'} h="500px" mb="10xp" borderWidth={'1px'} borderColor="gray.200" borderRadius={'16px'} overflow={'hidden'}>
-        //                         <Image w="full" h="full" objectFit="cover" src={(RESOURCE_URL as string) + (event?.bannerImage as string)} />
-        //                     </Box>
-        //                 </Box>
-
-        //                 <Box flex={1} h="full" mt={['20px', '20px', '0px', '0px']} borderWidth='0px' borderColor="gray.200" p={["0px", "0px", "20px", "20px"]} borderRadius={'16px'}>
-        //                     <Heading fontSize={'28px'}>{event?.name}</Heading>
-        //                     <HStack w="full" h="auto" p="10px" justifyContent={'space-between'} mt='10px' borderWidth={'1px'} borderColor="gray.200" borderRadius="16px">
-        //                         <VStack>
-        //                             <CustomText type='MEDIUM' fontSize={'16px'} text="Target" textAlign={'center'} width={'auto'} color="black" />
-        //                             <CustomText type='REGULAR' fontSize={'14px'} color='black' text={String(formatNumber(event?.goal || 0))} textAlign={'center'} width={'auto'} />
-        //                         </VStack>
-
-        //                         <VStack alignItems={'center'}>
-        //                             <CustomText type='MEDIUM' fontSize={'16px'} text="Raised" textAlign={'center'} width={'auto'} color="black" />
-        //                             <CustomText type='REGULAR' fontSize={'14px'} color='black' text={String(formatNumber(event?.total) || 0)} textAlign={'center'} width={'auto'} />
-        //                         </VStack>
-
-        //                         <ProgressCircle.Root value={(event?.total as number / ((event?.goal as number || 0) || 1)) * 100} size={'lg'}>
-        //                             <ProgressCircle.Circle css={{ "--thickness": "4px" }}>
-        //                                 <ProgressCircle.Track />
-        //                                 <ProgressCircle.Range stroke={'primaryColor'} />
-        //                             </ProgressCircle.Circle>
-        //                             <AbsoluteCenter>
-        //                                 <ProgressCircle.ValueText />
-        //                             </AbsoluteCenter>
-        //                         </ProgressCircle.Root>
-        //                     </HStack>
-
-        //                     <VStack mt='20px' w="full" alignItems={'flex-start'} spaceY={0} p='10px' borderRadius={'16px'} bgColor="gray.100" >
-        //                         <Heading fontSize={'16px'}>Fundraiser details</Heading>
-        //                         <Text fontSize={'14px'} mt="0px">{event?.description}</Text>
-        //                     </VStack>
-
-        //                     <HStack w="full" h="90px" p={2} borderRadius={'16px'} bgColor="gray.100" mt='10px' alignItems={'center'} spaceX={2}>
-        //                         <ChasescrollBox width='50px' height='50px' borderRadius='10px' bgColor='lightgrey'>
-        //                             <Avatar.Root width={'full'} height={'full'}>
-        //                                 <Avatar.Fallback name={`${event?.createdBy?.firstName} ${event?.createdBy?.lastName}`} />
-        //                                 <Avatar.Image src={`${RESOURCE_URL}${event?.createdBy?.data?.imgMain?.value}`} />
-        //                             </Avatar.Root>
-        //                         </ChasescrollBox>
-        //                         <VStack spaceX={0} spaceY={-2} alignItems={'flex-start'}>
-        //                             <Text fontFamily={'sans-serif'} fontWeight={700} fontSize={'16px'}>{capitalizeFLetter(event?.createdBy?.firstName)} {capitalizeFLetter(event?.createdBy?.lastName)}</Text>
-        //                             <Text fontFamily={'sans-serif'} fontWeight={300} fontSize={'14px'}>{capitalizeFLetter(event?.createdBy?.username)}</Text>
-        //                         </VStack>
-        //                     </HStack>
-
-        //                     <VStack alignItems={'flex-start'} mt='20px' spaceY={2} w={["100%", "100%", "50%", "50%"]}>
-        //                         <HStack justifyContent={'space-between'} w="full">
-        //                             <Text>End Date</Text>
-        //                             <HStack>
-        //                                 <Calendar1 size={'25px'} color="blue" variant='Outline' />
-        //                                 <Text>{DateTime.fromMillis(event?.endDate || 0).toFormat('dd LLL yyyy') ?? ''} {DateTime.fromMillis(event?.endDate || 0).toFormat('hh:mm a')}</Text>
-        //                             </HStack>
-        //                         </HStack>
-
-        //                         <Button w="full" h="60px" borderRadius={'full'} color="white" bgColor="primaryColor" onClick={() => {
-        //                             setFundRaiser(event);
-        //                             setShowModal(true)
-        //                         }}>Donate</Button>
-
-        //                     </VStack>
-
-        //                 </Box>
-        //             </Flex>
-        //         )}
-
-        //         {isLoading && (
-        //             <Flex w='full' h="full" spaceX={[0, 0, 6, 6]} mt="10px" flexDirection={['column', 'column', 'row', 'row']}>
-        //                 <Box flex={1} h="full">
-        //                     <Skeleton w="full" h="500px" borderRadius={'16px'} mb='10px' />
-        //                     <Skeleton w="full" h="150px" mb="5px" borderRadius={'16px'} />
-        //                 </Box>
-        //                 <Box flex={1} h="full">
-        //                     <Skeleton w="full" h="50px" mb="5px" borderRadius={'8px'} />
-        //                     <Skeleton w="full" h="50px" mb="5px" borderRadius={'8px'} />
-        //                 </Box>
-        //             </Flex>
-        //         )}
-        //     </Container>
-        // </Box>
-
         <Flex w={"full"} bgColor={mainBackgroundColor} flexDir={"column"} gap={"4"} px={["4", "4", "6"]} pb={["400px", "400px", "6"]} py={"6"} >
             <FundRaiserModal isOpen={showModal} onClose={() => setShowModal(false)} type='FUNDRAISER' />
             <BreadCrumbs {...event} />

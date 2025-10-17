@@ -2,19 +2,8 @@
 import httpService from "@/services/httpService";
 import { URLS } from "@/services/urls";
 import {
-    Box,
-    Button,
-    Container,
-    Flex,
-    Heading,
-    HStack,
-    Skeleton,
-    VStack,
-    Menu,
-    Portal,
-    Avatar,
-    ProgressCircle,
-    AbsoluteCenter,
+    Button, 
+    Flex, 
 } from "@chakra-ui/react";
 import { useQuery } from "@tanstack/react-query";
 import { Image, Text } from "@chakra-ui/react";
