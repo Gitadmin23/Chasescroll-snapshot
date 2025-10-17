@@ -11,7 +11,6 @@ export const dynamic = 'force-dynamic';
 export const revalidate = 60; // or any interval
 
 
-
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const { id } = params;
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;

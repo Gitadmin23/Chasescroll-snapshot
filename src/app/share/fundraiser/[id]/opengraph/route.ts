@@ -29,10 +29,7 @@ export async function GET(
       return new NextResponse("Fundraiser not found", { status: 404 });
     }
 
-    // ✅ Ensure valid image URL
-    const imageUrl = event.bannerImage?.startsWith("http")
-      ? event.bannerImage
-      : `${RESOURCE_URL}${event.bannerImage}`;
+    const imageUrl = `${RESOURCE_URL+event.bannerImage }`; 
 
     // ✅ Generate consistent OG metadata HTML
     const html = `
@@ -105,7 +102,7 @@ export async function GET(
 
           <script>
             // Fallback redirect for browsers
-            window.location.href = "https://share.chasescroll.com/share/fundraiser/${id}";
+            window.location.href = "/share/fundraiser/${id}";
           </script>
         </body>
       </html>

@@ -26,6 +26,10 @@ export async function GET(
       return new NextResponse("Event not found", { status: 404 });
     }
 
+    const imageUrl = `https://share.chasescroll.com/api/og-image/${encodeURIComponent(
+        RESOURCE_URL+event.currentPicUrl
+      )}`;
+
     // Construct Open Graph metadata HTML
     const html = `
       <!DOCTYPE html>
@@ -41,14 +45,14 @@ export async function GET(
           <meta property="og:type" content="website" />
           <meta property="og:title" content="${event.eventName}" />
           <meta property="og:description" content="${event.eventDescription}" />
-          <meta property="og:image" content="${RESOURCE_URL + event.currentPicUrl}" />
+          <meta property="og:image" content="${imageUrl}" />
           <meta property="og:url" content="${baseUrl}/events/${eventId}" />
 
           <!-- ✅ Twitter -->
           <meta name="twitter:card" content="summary_large_image" />
           <meta name="twitter:title" content="${event.eventName}" />
           <meta name="twitter:description" content="${event.eventDescription}" />
-          <meta name="twitter:image" content="${RESOURCE_URL + event.currentPicUrl}" />
+          <meta name="twitter:image" content="${imageUrl}" />
 
           <meta http-equiv="refresh" content="0; url=${baseUrl}/events/${eventId}" />
         </head>
