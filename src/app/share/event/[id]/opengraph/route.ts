@@ -2,17 +2,17 @@ import { NextResponse } from "next/server";
 import { RESOURCE_URL } from "@/constants";
 import { capitalizeFLetter } from "@/utils/capitalizeLetter";
 
-// ✅ This route returns static OG HTML for WhatsApp, LinkedIn, etc.
 export async function GET(
   request: Request,
-  { params }: { params: { id: string }
-  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>; }
+  { params }: { params: { id: string } }
 ) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
   const eventId = params.id;
 
   try {
-    // Fetch event data from your backend
+    const url = new URL(request.url);
+    const affiliateID = url.searchParams.get("affiliateID");
+
     const res = await fetch(`${baseUrl}/events/events?id=${eventId}`, {
       cache: "no-store",
     });
@@ -28,37 +28,37 @@ export async function GET(
       return new NextResponse("Event not found", { status: 404 });
     }
 
-    const imageUrl = `${RESOURCE_URL+event.currentPicUrl}`; 
+    const imageUrl = `${RESOURCE_URL}${event.currentPicUrl}`;
+    const redirectUrl = `/share/event/${eventId}${
+      affiliateID ? `?affiliateID=${affiliateID}` : ""
+    }`;
 
-          // <meta property="og:description" content="${event.eventDescription}" />
-    // Construct Open Graph metadata HTML
     const html = `
       <!DOCTYPE html>
       <html lang="en">
         <head>
           <meta charset="UTF-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          
-          <title>${capitalizeFLetter(event.eventName)}</title> 
+          <title>${capitalizeFLetter(event.eventName)}</title>
 
-          <!-- ✅ Open Graph -->
+          <!-- Open Graph -->
           <meta property="og:type" content="website" />
           <meta property="og:title" content="${capitalizeFLetter(event.eventName)}" />
           <meta property="og:image" content="${imageUrl}" />
-          <meta property="og:url" content="https://share.chasescroll.com/share/event/${eventId}" />
+          <meta property="og:url" content="${redirectUrl}" />
 
-          <!-- ✅ Twitter -->
+          <!-- Twitter -->
           <meta name="twitter:card" content="summary_large_image" />
-          <meta name="twitter:title" content="${capitalizeFLetter(event.eventName)}" /> 
+          <meta name="twitter:title" content="${capitalizeFLetter(event.eventName)}" />
           <meta name="twitter:image" content="${imageUrl}" />
 
-          <meta http-equiv="refresh" content="0; url=https://share.chasescroll.com/share/event/${eventId}" />
+          <!-- Immediate redirect -->
+          <meta http-equiv="refresh" content="0; url=${redirectUrl}" />
         </head>
         <body>
           <p>Redirecting to event...</p>
           <script>
-            // Fallback redirect for crawlers that ignore meta refresh
-            window.location.href = "/share/event/${eventId}";
+            window.location.replace("${redirectUrl}");
           </script>
         </body>
       </html>
@@ -67,7 +67,7 @@ export async function GET(
     return new NextResponse(html, {
       headers: {
         "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "public, max-age=86400, immutable",
+        "Cache-Control": "no-store",
         "Access-Control-Allow-Origin": "*",
       },
     });
