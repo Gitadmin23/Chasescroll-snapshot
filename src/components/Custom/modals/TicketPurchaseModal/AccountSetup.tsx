@@ -40,6 +40,7 @@ import { ITicketCreatedModel } from "@/models/TicketCreatedModel";
 import PaymentButton from "../../PaymentButton";
 import { IUser } from "@/models/User";
 import useCustomTheme from "@/hooks/useTheme";
+import { useSearchParams } from "next/navigation";
 
 function AccountSetup() {
   const [step, setStep] = useAtom(ticketurchaseStepAtom);
@@ -52,13 +53,16 @@ function AccountSetup() {
 
   const { primaryColor } = useCustomTheme()
 
+  const query = useSearchParams();
+  const affiliateID = query?.get('affiliateID');
+
   const [createTicketIsLoading, setCreateTicketIsLoading] =
     React.useState(false);
   const setCreatedTicket = useSetAtom(createdTicketAtom);
   const [totalSelectedTicketPrice, setTotalSelectedTicketPrice] = useAtom(
     totalAmountForSelectedTicketsAtom
   );
-  const affiliateID = useAtomValue(affiliateIDAtom);
+  // const affiliateID = useAtomValue(affiliateIDAtom);
   const [showLink, setShowLink] = React.useState(false);
 
   const [token, setToken] = React.useState(() =>
@@ -106,7 +110,7 @@ function AccountSetup() {
               ticketType: item.ticketType,
               numberOfTickets: item.quantity,
             })) as any,
-            affiliateID,
+            affiliateID: affiliateID,
           });
         } else {
           createTicket({
