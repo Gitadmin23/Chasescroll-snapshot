@@ -4,15 +4,10 @@ import { capitalizeFLetter } from "@/utils/capitalizeLetter";
 
 export async function GET(
   request: Request,
-  {
-    params,
-  }: {
-    params: { id: string };
-    searchParams?: Promise<{ [key: string]: string | string[] | undefined }>;
-  }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
-  const id = params.id;
+  const { id } = await params;
 
   try {
     // ✅ Fetch fundraiser details

@@ -2,77 +2,78 @@ import { NextResponse } from "next/server";
 import { RESOURCE_URL } from "@/constants";
 import { capitalizeFLetter } from "@/utils/capitalizeLetter";
 
-// ✅ This route returns static OG HTML for WhatsApp, LinkedIn, etc.
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string }
-  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>; }
+    request: Request,
+    { params }: { params: Promise<{ id: string }> },
 ) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
-  const eventId = params.id;
+  
+    const { id } = await params;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
 
-  try {
-    // Fetch event data from your backend
-    const res = await fetch(`${baseUrl}/events/events?id=${eventId}`, {
-      cache: "no-store",
-    });
+    try {
+        const url = new URL(request.url);
+        const affiliateID = url.searchParams.get("affiliateID");
 
-    if (!res.ok) {
-      throw new Error(`Failed to fetch event data: ${res.statusText}`);
-    }
+        const res = await fetch(`${baseUrl}/events/events?id=${id}`, {
+            cache: "no-store",
+        });
 
-    const data = await res.json();
-    const event = data?.content?.[0];
+        if (!res.ok) {
+            throw new Error(`Failed to fetch event data: ${res.statusText}`);
+        }
 
-    if (!event) {
-      return new NextResponse("Event not found", { status: 404 });
-    }
+        const data = await res.json();
+        const event = data?.content?.[0];
 
-    const imageUrl = `${RESOURCE_URL+event.currentPicUrl}`; 
+        if (!event) {
+            return new NextResponse("Event not found", { status: 404 });
+        }
 
-          // <meta property="og:description" content="${event.eventDescription}" />
-    // Construct Open Graph metadata HTML
-    const html = `
+        const imageUrl = `${RESOURCE_URL}${event.currentPicUrl}`;
+        const redirectUrl = `/share/event/${id}${
+            affiliateID ? `?affiliateID=${affiliateID}` : ""
+        }`;
+
+        const html = `
       <!DOCTYPE html>
       <html lang="en">
         <head>
           <meta charset="UTF-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-          
-          <title>${capitalizeFLetter(event.eventName)}</title> 
+          <title>${capitalizeFLetter(event.eventName)}</title>
 
-          <!-- ✅ Open Graph -->
+          <!-- Open Graph -->
           <meta property="og:type" content="website" />
           <meta property="og:title" content="${capitalizeFLetter(event.eventName)}" />
           <meta property="og:image" content="${imageUrl}" />
-          <meta property="og:url" content="https://share.chasescroll.com/share/event/${eventId}" />
+          <meta property="og:url" content="${redirectUrl}" />
 
-          <!-- ✅ Twitter -->
+          <!-- Twitter -->
           <meta name="twitter:card" content="summary_large_image" />
-          <meta name="twitter:title" content="${capitalizeFLetter(event.eventName)}" /> 
+          <meta name="twitter:title" content="${capitalizeFLetter(event.eventName)}" />
           <meta name="twitter:image" content="${imageUrl}" />
 
-          <meta http-equiv="refresh" content="0; url=https://share.chasescroll.com/share/event/${eventId}" />
+          <!-- Immediate redirect -->
+          <meta http-equiv="refresh" content="0; url=${redirectUrl}" />
         </head>
         <body>
           <p>Redirecting to event...</p>
           <script>
-            // Fallback redirect for crawlers that ignore meta refresh
-            window.location.href = "/share/event/${eventId}";
+            window.location.replace("${redirectUrl}");
           </script>
         </body>
       </html>
     `;
 
-    return new NextResponse(html, {
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "public, max-age=86400, immutable",
-        "Access-Control-Allow-Origin": "*",
-      },
-    });
-  } catch (error) {
-    console.error("Error generating OG page:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
-  }
+        return new NextResponse(html, {
+            headers: {
+                "Content-Type": "text/html; charset=utf-8",
+                "Cache-Control": "no-store",
+                "Access-Control-Allow-Origin": "*",
+            },
+        });
+    } catch (error) {
+        console.error("Error generating OG page:", error);
+        return new NextResponse("Internal Server Error", { status: 500 });
+    }
 }

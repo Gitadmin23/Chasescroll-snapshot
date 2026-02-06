@@ -1,10 +1,10 @@
 import { notFound } from 'next/navigation'
 import { Metadata } from 'next' 
 import { RESOURCE_URL } from '@/constants'
+import Product from '@/views/share/Product'
 
 interface Props {
-    params: { type: string }
-    searchParams: { id: string; affiliateID?: string }
+    params: { id: string } 
 }
 
 // ✅ Force server-side static generation so crawlers (WhatsApp, LinkedIn, etc.) see OG tags
@@ -99,83 +99,49 @@ interface Props {
 //     }
 // }
 
-export async function generateMetadata({ params, searchParams }: Props): Promise<Metadata | undefined> {
-    const { type } = await params
-    const { id } = await searchParams
-    const url = process.env.NEXT_PUBLIC_BASE_URL as string
+// export async function generateMetadata({ params }: Props): Promise<Metadata | undefined> {
+//     const { id } = await params 
+//     const url = process.env.NEXT_PUBLIC_BASE_URL as string
 
 
-    if (type === 'event') {
-        // fetch data
-        let product: any
-        try {
-            product = await fetch(url + "/events/events?id=" + id, {
-                // headers: myHeaders,
-                method: 'GET'
-            }).then((res) => res.json())
+//     if (type === 'event') {
+//         // fetch data
+//         let product: any
+//         try {
+//             product = await fetch(url + "/events/events?id=" + id, {
+//                 // headers: myHeaders,
+//                 method: 'GET'
+//             }).then((res) => res.json())
 
-            // console.log(product);
-        } catch (error) {
-            console.log(error);
-        }
+//             // console.log(product);
+//         } catch (error) {
+//             console.log(error);
+//         }
 
-        console.log(product);
+//         console.log(product);
         
 
-        // optionally access and extend (rather than replace) parent metadata
-        // const previousImages = (await parent).openGraph?.images || [] 
+//         // optionally access and extend (rather than replace) parent metadata
+//         // const previousImages = (await parent).openGraph?.images || [] 
 
-        return {
-            title: product?.content?.length > 0 ? product?.content[0]?.eventName : "",
-            description: product?.content?.length > 0 ? product?.content[0]?.eventDescription : "",
-            openGraph: {
-                title: product?.content?.length > 0 ? product?.content[0]?.eventName : "",
-                description: product?.content?.length > 0 ? product?.content[0]?.eventDescription : "",
-                images: [{
-                    url: RESOURCE_URL + (product?.content?.length > 0 ? product?.content[0]?.currentPicUrl : ""),
-                }],
-            },
-        }
-    }
-}
+//         return {
+//             title: product?.content?.length > 0 ? product?.content[0]?.eventName : "",
+//             description: product?.content?.length > 0 ? product?.content[0]?.eventDescription : "",
+//             openGraph: {
+//                 title: product?.content?.length > 0 ? product?.content[0]?.eventName : "",
+//                 description: product?.content?.length > 0 ? product?.content[0]?.eventDescription : "",
+//                 images: [{
+//                     url: RESOURCE_URL + (product?.content?.length > 0 ? product?.content[0]?.currentPicUrl : ""),
+//                 }],
+//             },
+//         }
+//     }
+// }
 
 // ✅ Render page dynamically by type
-export default async function SharePage({ params, searchParams }: Props) {
-    const { type } = params
-    const { id, affiliateID } = searchParams
+export default async function SharePage({ params }: Props) {
 
-    const allowedTypes = ['event', 'fundraiser', 'service', 'rental', 'product']
-    if (!allowedTypes?.includes(type?.toLowerCase())) {
-        notFound()
-    }
+    const { id } = params 
 
-    // ✅ Lazy-load the appropriate share view
-    const ComponentMap = {
-        event: async () => {
-            const EventComponent = (await import('@/views/share/Event')).default
-            return <EventComponent id={id} affiliateID={affiliateID} />
-        },
-        fundraiser: async () => {
-            const FundraiserComponent = (await import('@/views/share/Fundraiser')).default
-            return <FundraiserComponent id={id} />
-        },
-        service: async () => {
-            const ServiceComponent = (await import('@/views/share/Service')).default
-            return <ServiceComponent id={id} />
-        },
-        rental: async () => {
-            const RentalComponent = (await import('@/views/share/Rental')).default
-            return <RentalComponent id={id} />
-        },
-        product: async () => {
-            const ProductComponent = (await import('@/views/share/Product')).default
-            return <ProductComponent id={id} />
-        },
-    }
-
-    const DynamicComponent =
-        ComponentMap[type.toLowerCase() as keyof typeof ComponentMap]
-    const Content = await DynamicComponent()
-
-    return <div className="container mx-auto p-4">{Content}</div>
+    return <Product id={id} />
 }
