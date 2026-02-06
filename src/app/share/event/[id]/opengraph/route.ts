@@ -3,37 +3,38 @@ import { RESOURCE_URL } from "@/constants";
 import { capitalizeFLetter } from "@/utils/capitalizeLetter";
 
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+    request: Request,
+    { params }: { params: Promise<{ id: string }> },
 ) {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
-  const eventId = params.id;
+  
+    const { id } = await params;
+    const baseUrl = process.env.NEXT_PUBLIC_BASE_URL as string;
 
-  try {
-    const url = new URL(request.url);
-    const affiliateID = url.searchParams.get("affiliateID");
+    try {
+        const url = new URL(request.url);
+        const affiliateID = url.searchParams.get("affiliateID");
 
-    const res = await fetch(`${baseUrl}/events/events?id=${eventId}`, {
-      cache: "no-store",
-    });
+        const res = await fetch(`${baseUrl}/events/events?id=${id}`, {
+            cache: "no-store",
+        });
 
-    if (!res.ok) {
-      throw new Error(`Failed to fetch event data: ${res.statusText}`);
-    }
+        if (!res.ok) {
+            throw new Error(`Failed to fetch event data: ${res.statusText}`);
+        }
 
-    const data = await res.json();
-    const event = data?.content?.[0];
+        const data = await res.json();
+        const event = data?.content?.[0];
 
-    if (!event) {
-      return new NextResponse("Event not found", { status: 404 });
-    }
+        if (!event) {
+            return new NextResponse("Event not found", { status: 404 });
+        }
 
-    const imageUrl = `${RESOURCE_URL}${event.currentPicUrl}`;
-    const redirectUrl = `/share/event/${eventId}${
-      affiliateID ? `?affiliateID=${affiliateID}` : ""
-    }`;
+        const imageUrl = `${RESOURCE_URL}${event.currentPicUrl}`;
+        const redirectUrl = `/share/event/${id}${
+            affiliateID ? `?affiliateID=${affiliateID}` : ""
+        }`;
 
-    const html = `
+        const html = `
       <!DOCTYPE html>
       <html lang="en">
         <head>
@@ -64,15 +65,15 @@ export async function GET(
       </html>
     `;
 
-    return new NextResponse(html, {
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "no-store",
-        "Access-Control-Allow-Origin": "*",
-      },
-    });
-  } catch (error) {
-    console.error("Error generating OG page:", error);
-    return new NextResponse("Internal Server Error", { status: 500 });
-  }
+        return new NextResponse(html, {
+            headers: {
+                "Content-Type": "text/html; charset=utf-8",
+                "Cache-Control": "no-store",
+                "Access-Control-Allow-Origin": "*",
+            },
+        });
+    } catch (error) {
+        console.error("Error generating OG page:", error);
+        return new NextResponse("Internal Server Error", { status: 500 });
+    }
 }

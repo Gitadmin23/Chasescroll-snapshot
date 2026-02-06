@@ -15,7 +15,7 @@ unsecureHttpService.interceptors.response.use((data) => {
 });
 
 httpService.interceptors.request.use(async (config) => {
-    const tptoken = sessionStorage.getItem('tp_token')
+    const tptoken = localStorage.getItem('tp_token')
     const token = localStorage.getItem('token')
 
     if (config.data instanceof FormData) {
