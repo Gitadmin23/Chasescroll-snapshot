@@ -73,7 +73,7 @@ function FundRaiserModal({ isOpen, onClose }: IProps) {
                             )}
                             {currentStep === 2 && (
                                 <LoginModal
-                                    callbackUrl={`/share/fundraiser?id=${currentId}`}
+                                    callbackUrl={`/share/fundraiser/${currentId}`}
                                     onLoggedIn={() => {
                                         setCurrentStep(1);
                                     }} />

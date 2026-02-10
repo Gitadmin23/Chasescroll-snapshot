@@ -24,9 +24,8 @@ import LoginModal from "./LoginModal";
 import { currentIdAtom } from "@/views/share/Event";
 import TicketPurchaseSuccessModal from "./TicketPurchaseSuccessModal";
 import { STORAGE_KEYS } from "@/utils/StorageKeys";
-import { useSession, signOut } from "next-auth/react";
+import { useSession } from "next-auth/react"; 
 
-const titles = ["Select Tickets", "Enter Details", "Verify Your Email"];
 interface IProps {
   isOpen: boolean;
   onClose: () => void;
@@ -106,7 +105,7 @@ function TicketPurchaseModal({ isOpen, onClose }: IProps) {
                 {currentStep === 2 && <AccountSetup />}
                 {currentStep === 3 && (
                   <LoginModal
-                    callbackUrl={`/share/event?id=${currentId}`}
+                    callbackUrl={`/share/event/${currentId}`}
                     onLoggedIn={() => {
                       setCurrentStep(2);
                     }}
