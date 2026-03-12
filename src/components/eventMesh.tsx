@@ -95,7 +95,7 @@ export default function EventMesh({
                 <Flex
                   onClick={() =>
                     router.push(
-                      `/share/product?id=${item?.returnProductDto?.id}`
+                      `/share/product/${item?.returnProductDto?.id}`
                     )
                   }
                   cursor={"pointer"}
