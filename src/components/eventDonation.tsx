@@ -75,7 +75,7 @@ export default function EventDonation({ checkbox, item }: { checkbox?: boolean, 
     // }
 
     const clickHandler = (item: any) => {
-        router?.push('/share/fundraiser?id=' + item)
+        router?.push('/share/fundraiser/' + item)
     } 
 
     return ( 
