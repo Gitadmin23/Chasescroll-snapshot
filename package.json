@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "PORT=5001 next dev --turbopack",
+    "dev": "PORT=3000 next dev --turbopack",
     "build": "next build",
     "start": "PORT=5001 next start",
     "lint": "next lint"

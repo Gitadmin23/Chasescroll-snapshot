@@ -126,7 +126,7 @@ function Event({ id, affiliateID }: { id: string; affiliateID?: string }) {
                 type: "error",
             });
         }
-    }, [ticketType, tickets]);
+    }, [ticketType, tickets, ]);
 
     const isAdmin =
         event?.isOrganizer ||
@@ -149,6 +149,7 @@ function Event({ id, affiliateID }: { id: string; affiliateID?: string }) {
                         isOpen={showModal}
                         onClose={() => setShowModal(false)}
                         type="EVENT"
+                        event={event}
                     />
                     <BreadCrumbs {...event} />
                     <Flex w={"full"} gap={"4"} flexDir={["column", "column", "row"]}>

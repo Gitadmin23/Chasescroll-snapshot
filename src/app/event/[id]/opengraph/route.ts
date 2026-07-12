@@ -27,7 +27,7 @@ export async function GET(
     }
 
     const imageUrl = `https://share.chasescroll.com/api/og-image/${encodeURIComponent(
-        RESOURCE_URL+event.currentPicUrl
+        RESOURCE_URL+event.picUrls[0]
       )}`;
 
     // Construct Open Graph metadata HTML
