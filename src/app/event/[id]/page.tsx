@@ -51,7 +51,7 @@ function TicketSalePage({ params, }: Props) {
 
                         <Box flex={1} h="full">
                             <Box width={'full'} h="500px" mb="10xp" borderWidth={'1px'} borderColor="gray.200" borderRadius={'16px'} overflow={'hidden'}>
-                                <Image w="full" h="full" objectFit="cover" src={(RESOURCE_URL as string) + (event?.picUrls[0] as string)} />
+                                <Image w="full" h="full" objectFit="cover" src={(RESOURCE_URL as string) + (event?.currentPicUrl as string)} />
                             </Box>
 
                             <HStack w="auto" h="40px" borderRadius={"full"} spaceX={3} justifyContent={'flex-start'} alignItems={'center'} px={2} bgColor={'gray.100'} mt="20px">
