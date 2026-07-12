@@ -158,11 +158,7 @@ function Event({ id, affiliateID }: { id: string; affiliateID?: string }) {
                                 <ProductImageScroller
                                     rounded={"8px"}
                                     height={["340px", "340px", "520px"]}
-                                    images={
-                                        event?.picUrls?.length > 0
-                                            ? event?.picUrls
-                                            : [event?.currentPicUrl]
-                                    }
+                                    images={event?.picUrls}
                                 />
                             </Flex>
                             <Flex
