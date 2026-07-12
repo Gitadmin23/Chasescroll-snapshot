@@ -29,7 +29,7 @@ export async function GET(
             return new NextResponse("Event not found", { status: 404 });
         }
 
-        const imageUrl = `${RESOURCE_URL}${event.currentPicUrl}`;
+        const imageUrl = `${RESOURCE_URL}${event.picUrls[0]}`;
         const redirectUrl = `/share/event/${id}${
             affiliateID ? `?affiliateID=${affiliateID}` : ""
         }`;
