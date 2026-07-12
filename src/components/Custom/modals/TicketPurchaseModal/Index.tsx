@@ -25,11 +25,14 @@ import { currentIdAtom } from "@/views/share/Event";
 import TicketPurchaseSuccessModal from "./TicketPurchaseSuccessModal";
 import { STORAGE_KEYS } from "@/utils/StorageKeys";
 import { useSession } from "next-auth/react"; 
+import { IEvent } from "@/models/Events";
+import { IEventType } from "@/models/Event";
 
 interface IProps {
   isOpen: boolean;
   onClose: () => void;
-  type: "EVENT" | "FUNDRAISER" | "PRODUCT";
+  type: "EVENT" | "FUNDRAISER" | "PRODUCT"; 
+  event?: IEventType
 }
 
 function TicketPurchaseModal({ isOpen, onClose }: IProps) {
@@ -48,10 +51,10 @@ function TicketPurchaseModal({ isOpen, onClose }: IProps) {
       return quantity ? Number(quantity) : 1;
     });
 
-    setEvent(() => {
-      const event = localStorage.getItem(STORAGE_KEYS.EVENT_DETAILS);
-      return event ? JSON.parse(event) : null;
-    });
+    // setEvent(() => {
+    //   const event = localStorage.getItem(STORAGE_KEYS.EVENT_DETAILS);
+    //   return event ? JSON.parse(event) : null;
+    // });
 
     setActiveTicket(() => {
       const ticket = localStorage.getItem(STORAGE_KEYS.ACTIVE_TICKET);
