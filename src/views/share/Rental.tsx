@@ -297,7 +297,6 @@ export function RentalDetail({ id }: { id: string }) {
                     </Flex>
                 </Flex>
             </Flex>
-
             {/* Map Section */}
             {(coordinates || item?.location?.locationDetails) && (
                 <Flex w="full" flexDir="column" gap="2" mt="2">
