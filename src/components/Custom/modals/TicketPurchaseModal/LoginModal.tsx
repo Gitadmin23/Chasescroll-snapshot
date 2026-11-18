@@ -36,10 +36,14 @@ function LoginModal({ onLoggedIn, callbackUrl }: LoginModalProps) {
   const getPublicProfile = useMutation({
     mutationFn: (userId: any) =>
       httpService.get(`${URLS.GET_PUBLIC_PROIFLE}/${userId}`),
-    onError: () => {},
+    onError: () => {
+      onLoggedIn();
+    },
     onSuccess: (data) => {
       const details: IUser = data?.data;
-      localStorage.setItem(STORAGE_KEYS.USER_DETAILS, JSON.stringify(details));
+      if (details && typeof window !== "undefined") {
+        sessionStorage.setItem(STORAGE_KEYS.USER_DETAILS, JSON.stringify(details));
+      }
       onLoggedIn();
     },
   });
@@ -54,11 +58,19 @@ function LoginModal({ onLoggedIn, callbackUrl }: LoginModalProps) {
       });
     },
     onSuccess: (data) => {
-      localStorage.setItem(STORAGE_KEYS.USER_ID, data?.data?.user_id);
-      localStorage.setItem(STORAGE_KEYS.token, data?.data?.access_token);
-      localStorage.setItem(STORAGE_KEYS.refreshToken, data?.data?.refresh_token);
-      const user_id = localStorage.getItem(STORAGE_KEYS.USER_ID);
-      getPublicProfile.mutate(user_id);
+      const accessToken = data?.data?.access_token;
+      const refreshToken = data?.data?.refresh_token;
+      const userId = data?.data?.user_id;
+
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(STORAGE_KEYS.USER_ID, userId);
+        sessionStorage.setItem("user_id", userId);
+        sessionStorage.setItem(STORAGE_KEYS.token, accessToken);
+        sessionStorage.setItem("token", accessToken);
+        sessionStorage.setItem(STORAGE_KEYS.refreshToken, refreshToken);
+        sessionStorage.setItem("refresh_token", refreshToken);
+      }
+      getPublicProfile.mutate(userId);
     },
   });
 
@@ -77,12 +89,20 @@ function LoginModal({ onLoggedIn, callbackUrl }: LoginModalProps) {
       });
     },
     onSuccess: (data) => {
-      localStorage.setItem(STORAGE_KEYS.USER_ID, data?.data?.user_id);
-      localStorage.setItem(STORAGE_KEYS.token, data?.data?.access_token);
-      localStorage.setItem(STORAGE_KEYS.refreshToken, data?.data?.refresh_token);
-      localStorage.setItem(STORAGE_KEYS.GOOGLE_AUTH, "GOOGLE");
-      const user_id = localStorage.getItem(STORAGE_KEYS.USER_ID);
-      getPublicProfile.mutate(user_id);
+      const accessToken = data?.data?.access_token;
+      const refreshToken = data?.data?.refresh_token;
+      const userId = data?.data?.user_id;
+
+      if (typeof window !== "undefined") {
+        sessionStorage.setItem(STORAGE_KEYS.USER_ID, userId);
+        sessionStorage.setItem("user_id", userId);
+        sessionStorage.setItem(STORAGE_KEYS.token, accessToken);
+        sessionStorage.setItem("token", accessToken);
+        sessionStorage.setItem(STORAGE_KEYS.refreshToken, refreshToken);
+        sessionStorage.setItem("refresh_token", refreshToken);
+        sessionStorage.setItem(STORAGE_KEYS.GOOGLE_AUTH, "GOOGLE");
+      }
+      getPublicProfile.mutate(userId);
     },
   });
 

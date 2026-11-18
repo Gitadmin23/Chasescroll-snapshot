@@ -14,6 +14,7 @@ interface IProps {
   type?: "text" | "number" | "email" | "password";
   placeholder?: string;
   disabled?: boolean;
+  autoComplete?: string;
 }
 
 function CustomInput({
@@ -23,6 +24,7 @@ function CustomInput({
   type = "text",
   placeholder = "",
   disabled = false,
+  autoComplete = "off",
 }: IProps) {
   const [showPassword, setShowPassword] = React.useState(false);
   const { handleBlur, handleChange, errors, touched, values } =
@@ -72,6 +74,7 @@ function CustomInput({
             id={name}
             placeholder={placeholder}
             disabled={disabled}
+            autoComplete={autoComplete}
             value={values[name] ?? ""}
             onChange={(e) => {
               if (type === "number") {

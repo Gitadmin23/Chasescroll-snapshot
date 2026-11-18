@@ -100,17 +100,10 @@ function Event({ id, affiliateID }: EventProps) {
         }
     }, [data, isError, isLoading, setActiveTicket, setActiveEvent]);
 
-    // Restore purchase step from localStorage if flow was in progress
+    // Reset purchase step to 1 (fresh selection)
     React.useEffect(() => {
-        const step = localStorage.getItem(STORAGE_KEYS.CURRENT_STEP);
-        if (step) {
-            const stepNum = Number(step);
-            setCurrentStep(stepNum > 0 ? stepNum : 1);
-            if (stepNum > 1 && event?.id && (event.productTypeData?.length ?? 0) > 0) {
-                setShowModal(true);
-            }
-        }
-    }, [event?.id, event?.productTypeData, setCurrentStep, setShowModal]);
+        setCurrentStep(1);
+    }, [setCurrentStep]);
 
     // Update document title
     React.useEffect(() => {
@@ -120,6 +113,50 @@ function Event({ id, affiliateID }: EventProps) {
             document.title = "Chasescroll | Event";
         }
     }, [event?.eventName]);
+
+    // Clear out tokens when user leaves the page
+    React.useEffect(() => {
+        const handleClearTokens = () => {
+            try {
+                if (typeof window !== "undefined") {
+                    sessionStorage.removeItem(STORAGE_KEYS.token);
+                    sessionStorage.removeItem("token");
+                    sessionStorage.removeItem(STORAGE_KEYS.refreshToken);
+                    sessionStorage.removeItem("refresh_token");
+                    sessionStorage.removeItem("tp_token");
+                    sessionStorage.removeItem(STORAGE_KEYS.USER_ID);
+                    sessionStorage.removeItem("user_id");
+                    sessionStorage.removeItem(STORAGE_KEYS.USER_DETAILS);
+                    sessionStorage.removeItem(STORAGE_KEYS.CURRENT_STEP);
+
+                    localStorage.removeItem(STORAGE_KEYS.token);
+                    localStorage.removeItem("token");
+                    localStorage.removeItem(STORAGE_KEYS.refreshToken);
+                    localStorage.removeItem("refresh_token");
+                    localStorage.removeItem("tp_token");
+                    localStorage.removeItem(STORAGE_KEYS.USER_ID);
+                    localStorage.removeItem("user_id");
+                    localStorage.removeItem(STORAGE_KEYS.USER_DETAILS);
+                    localStorage.removeItem(STORAGE_KEYS.CURRENT_STEP);
+                }
+                if (typeof document !== "undefined") {
+                    document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+                    document.cookie = "chase_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+                }
+            } catch (error) {
+                console.error("Error clearing token on page leave:", error);
+            }
+        };
+
+        window.addEventListener("beforeunload", handleClearTokens);
+        window.addEventListener("pagehide", handleClearTokens);
+
+        return () => {
+            handleClearTokens();
+            window.removeEventListener("beforeunload", handleClearTokens);
+            window.removeEventListener("pagehide", handleClearTokens);
+        };
+    }, []);
 
     // Ticket selection & purchase modal trigger
     const handlePayment = React.useCallback(() => {

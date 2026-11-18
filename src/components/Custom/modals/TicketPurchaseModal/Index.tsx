@@ -57,39 +57,21 @@ function TicketPurchaseModal({
     }
   }, [propEvent, event?.id, setEvent]);
 
-  // Restore saved state from localStorage safely without throwing on invalid JSON
-  React.useEffect(() => {
-    try {
-      const savedQuantity = localStorage.getItem(STORAGE_KEYS.TICKET_COUNT);
-      if (savedQuantity) {
-        setQuantity(Number(savedQuantity) || 1);
-      }
-
-      const savedTicket = localStorage.getItem(STORAGE_KEYS.ACTIVE_TICKET);
-      if (savedTicket) {
-        setActiveTicket(JSON.parse(savedTicket));
-      }
-
-      const savedSelected = localStorage.getItem(STORAGE_KEYS.SELECTED_TICKETS);
-      if (savedSelected) {
-        const parsed = JSON.parse(savedSelected);
-        if (Array.isArray(parsed)) {
-          setSelectedTickets(parsed);
-        }
-      }
-    } catch (e) {
-      console.error("Failed to restore ticket state from localStorage:", e);
-    }
-  }, [setQuantity, setActiveTicket, setSelectedTickets]);
-
-  // Safely close and clear only ticket transaction keys (NEVER localStorage.clear())
+  // Safely close and clear only ticket transaction keys
   const handleClose = React.useCallback(() => {
     try {
-      localStorage.removeItem(STORAGE_KEYS.CURRENT_STEP);
-      localStorage.removeItem(STORAGE_KEYS.ACTIVE_TICKET);
-      localStorage.removeItem(STORAGE_KEYS.SELECTED_TICKETS);
-      localStorage.removeItem(STORAGE_KEYS.TICKET_COUNT);
-      localStorage.removeItem(STORAGE_KEYS.EVENT_TOTAL_AMOUNT);
+      if (typeof window !== "undefined") {
+        sessionStorage.removeItem(STORAGE_KEYS.CURRENT_STEP);
+        sessionStorage.removeItem(STORAGE_KEYS.ACTIVE_TICKET);
+        sessionStorage.removeItem(STORAGE_KEYS.SELECTED_TICKETS);
+        sessionStorage.removeItem(STORAGE_KEYS.TICKET_COUNT);
+        sessionStorage.removeItem(STORAGE_KEYS.EVENT_TOTAL_AMOUNT);
+        localStorage.removeItem(STORAGE_KEYS.CURRENT_STEP);
+        localStorage.removeItem(STORAGE_KEYS.ACTIVE_TICKET);
+        localStorage.removeItem(STORAGE_KEYS.SELECTED_TICKETS);
+        localStorage.removeItem(STORAGE_KEYS.TICKET_COUNT);
+        localStorage.removeItem(STORAGE_KEYS.EVENT_TOTAL_AMOUNT);
+      }
     } catch (e) {
       console.error("Error clearing ticket session keys:", e);
     }

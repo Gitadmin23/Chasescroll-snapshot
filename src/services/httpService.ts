@@ -15,8 +15,8 @@ unsecureHttpService.interceptors.response.use((data) => {
 });
 
 httpService.interceptors.request.use(async (config) => {
-    const tptoken = localStorage.getItem('tp_token')
-    const token = localStorage.getItem('token')
+    const tptoken = typeof window !== 'undefined' ? (sessionStorage.getItem('tp_token') || localStorage.getItem('tp_token')) : null;
+    const token = typeof window !== 'undefined' ? (sessionStorage.getItem('token') || localStorage.getItem('token')) : null;
 
     if (config.data instanceof FormData) {
         console.log('ITS FORMDATA');
@@ -60,7 +60,11 @@ httpService.interceptors.response.use((data) => {
         }
         else {
             if (error.response?.status === 401 || error.response?.status === 403) {
-                localStorage.setItem('token', '');
+                if (typeof window !== 'undefined') {
+                    sessionStorage.removeItem('token');
+                    sessionStorage.removeItem('tp_token');
+                    localStorage.removeItem('token');
+                }
             }
             return Promise.reject(error.response?.data.message);
         }

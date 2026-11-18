@@ -10,6 +10,7 @@ import {
   Flex,
   Text,
   IconButton,
+  Badge,
 } from "@chakra-ui/react";
 import { useAtom, useSetAtom } from "jotai";
 import { useMutation } from "@tanstack/react-query";
@@ -29,7 +30,7 @@ import {
   ticketurchaseStepAtom,
   totalAmountForSelectedTicketsAtom,
 } from "@/states/activeTicket";
-import { ArrowLeft } from "iconsax-reactjs";
+import { ArrowLeft, User } from "iconsax-reactjs";
 import { formatNumber } from "@/utils/formatNumber";
 import { RESOURCE_URL } from "@/constants";
 import useForm from "@/hooks/useForm";
@@ -39,7 +40,8 @@ import { STORAGE_KEYS } from "@/utils/StorageKeys";
 import { ITicketCreatedModel } from "@/models/TicketCreatedModel";
 import { IUser } from "@/models/User";
 import useCustomTheme from "@/hooks/useTheme";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
+import { LANDINGPAGE_URL } from "@/helpers/services/urls";
 
 function AccountSetup() {
   const [, setStep] = useAtom(ticketurchaseStepAtom);
@@ -64,26 +66,102 @@ function AccountSetup() {
   const { primaryColor } = useCustomTheme();
   const query = useSearchParams();
   const affiliateID = query?.get("affiliateID") || undefined;
+  const router = useRouter()
 
   const [createTicketIsLoading, setCreateTicketIsLoading] = React.useState(false);
   const [showLink, setShowLink] = React.useState(false);
   const [lastOrderCode, setLastOrderCode] = React.useState<string | null>(null);
 
+  const getStoredToken = React.useCallback(() => {
+    if (typeof window === "undefined") return null;
+    return (
+      sessionStorage.getItem(STORAGE_KEYS.token) ||
+      sessionStorage.getItem("token") ||
+      localStorage.getItem(STORAGE_KEYS.token) ||
+      localStorage.getItem("token")
+    );
+  }, []);
+
+  const getStoredUserId = React.useCallback(() => {
+    if (typeof window === "undefined") return null;
+    return (
+      sessionStorage.getItem(STORAGE_KEYS.USER_ID) ||
+      sessionStorage.getItem("user_id") ||
+      localStorage.getItem(STORAGE_KEYS.USER_ID) ||
+      localStorage.getItem("user_id")
+    );
+  }, []);
+
+  const [isLoggedIn, setIsLoggedIn] = React.useState<boolean>(() => {
+    return Boolean(getStoredToken() && getStoredUserId());
+  });
+
   const [userDetails, setUserDetails] = React.useState<IUser | null>(() => {
     try {
-      const item = localStorage.getItem(STORAGE_KEYS.USER_DETAILS);
+      if (typeof window === "undefined") return null;
+      const item =
+        sessionStorage.getItem(STORAGE_KEYS.USER_DETAILS) ||
+        localStorage.getItem(STORAGE_KEYS.USER_DETAILS);
       return item ? JSON.parse(item) : null;
     } catch {
       return null;
     }
   });
 
-  const [isLoggedIn] = React.useState(() => {
-    return (
-      Boolean(localStorage.getItem(STORAGE_KEYS.token)) &&
-      Boolean(localStorage.getItem(STORAGE_KEYS.USER_ID))
-    );
-  });
+  // Sync auth & user details on mount
+  React.useEffect(() => {
+    try {
+      const token = getStoredToken();
+      const userId = getStoredUserId();
+      const logged = Boolean(token && userId);
+      setIsLoggedIn(logged);
+
+      const userItem =
+        sessionStorage.getItem(STORAGE_KEYS.USER_DETAILS) ||
+        localStorage.getItem(STORAGE_KEYS.USER_DETAILS);
+      if (userItem) {
+        setUserDetails(JSON.parse(userItem));
+      } else if (logged && userId) {
+        httpService
+          .get(`${URLS.GET_PUBLIC_PROIFLE}/${userId}`)
+          .then((res) => {
+            if (res.data) {
+              sessionStorage.setItem(
+                STORAGE_KEYS.USER_DETAILS,
+                JSON.stringify(res.data)
+              );
+              setUserDetails(res.data);
+            }
+          })
+          .catch(() => { });
+      }
+    } catch (e) {
+      console.error("Error reading auth state:", e);
+    }
+  }, [getStoredToken, getStoredUserId]);
+
+  const handleSignOut = React.useCallback(() => {
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem(STORAGE_KEYS.token);
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem(STORAGE_KEYS.refreshToken);
+      sessionStorage.removeItem("refresh_token");
+      sessionStorage.removeItem(STORAGE_KEYS.USER_ID);
+      sessionStorage.removeItem("user_id");
+      sessionStorage.removeItem(STORAGE_KEYS.USER_DETAILS);
+      sessionStorage.removeItem(STORAGE_KEYS.GOOGLE_AUTH);
+      localStorage.removeItem(STORAGE_KEYS.token);
+      localStorage.removeItem("token");
+      localStorage.removeItem(STORAGE_KEYS.refreshToken);
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem(STORAGE_KEYS.USER_ID);
+      localStorage.removeItem("user_id");
+      localStorage.removeItem(STORAGE_KEYS.USER_DETAILS);
+      localStorage.removeItem(STORAGE_KEYS.GOOGLE_AUTH);
+    }
+    setUserDetails(null);
+    setIsLoggedIn(false);
+  }, []);
 
   const { data: session } = useSession();
 
@@ -219,10 +297,10 @@ function AccountSetup() {
       const orderCode: string = String(json.content.orderCode || "");
       const buyerEmail: string = String(
         json.content.email ||
-          json.content.buyer?.email ||
-          values?.email ||
-          userDetails?.email ||
-          ""
+        json.content.buyer?.email ||
+        values?.email ||
+        userDetails?.email ||
+        ""
       );
       const orderTotal: number = Number(json.content.orderTotal || 0);
 
@@ -248,8 +326,11 @@ function AccountSetup() {
     mutationFn: (uId: string) => httpService.get(`${URLS.GET_PUBLIC_PROIFLE}/${uId}`),
     onSuccess: (data) => {
       const details: IUser = data?.data;
-      localStorage.setItem(STORAGE_KEYS.USER_DETAILS, JSON.stringify(details));
+      if (details && typeof window !== "undefined") {
+        sessionStorage.setItem(STORAGE_KEYS.USER_DETAILS, JSON.stringify(details));
+      }
       setUserDetails(details);
+      setIsLoggedIn(true);
 
       createTicket({
         eventID: event?.id as string,
@@ -278,57 +359,64 @@ function AccountSetup() {
     },
     onSuccess: (data) => {
       if (data?.data?.["stackTrace"]) {
-        localStorage.setItem(STORAGE_KEYS.EVENT, JSON.stringify(event));
-        localStorage.setItem(STORAGE_KEYS.ACTIVE_TICKET, JSON.stringify(ticket));
-        localStorage.setItem(STORAGE_KEYS.QUANTITY, quantity.toString());
-        localStorage.setItem(STORAGE_KEYS.SELECTED_TICKETS, JSON.stringify(selectedTickets));
         setShowLink(true);
         setCreateTicketIsLoading(false);
       } else {
-        localStorage.setItem(STORAGE_KEYS.token, data?.data?.access_token);
-        localStorage.setItem(STORAGE_KEYS.USER_ID, data?.data?.user_id);
-        localStorage.setItem(STORAGE_KEYS.refreshToken, data?.data?.refresh_token);
-        getPublicProfile.mutate(data?.data?.user_id);
+        const accessToken = data?.data?.access_token;
+        const refreshToken = data?.data?.refresh_token;
+        const userId = data?.data?.user_id;
+
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem(STORAGE_KEYS.token, accessToken);
+          sessionStorage.setItem("token", accessToken);
+          sessionStorage.setItem(STORAGE_KEYS.USER_ID, userId);
+          sessionStorage.setItem("user_id", userId);
+          sessionStorage.setItem(STORAGE_KEYS.refreshToken, refreshToken);
+          sessionStorage.setItem("refresh_token", refreshToken);
+        }
+        getPublicProfile.mutate(userId);
       }
     },
   });
 
-  const { renderForm, values, setFieldValue } = useForm({
+  // Start with clean, non-prefilled fields for guest checkout
+  const { renderForm, values } = useForm({
     defaultValues: {
-      firstName: userDetails?.firstName || "",
-      lastName: userDetails?.lastName || "",
-      email: userDetails?.email || "",
+      firstName: "",
+      lastName: "",
+      email: "",
     },
     onSubmit: (formData: { firstName: string; lastName: string; email: string }) => {
-      // If payment was previously initiated and user is retrying with same code
       if (lastOrderCode && totalSelectedTicketPrice > 0) {
         triggerPaystack(lastOrderCode, formData.email, totalSelectedTicketPrice);
         return;
       }
 
-      if (isLoggedIn) {
-        createTicket({
-          eventID: event?.id as string,
-          ticketBuyObjectList: (selectedTickets || []).map((item) => ({
-            ticketType: item.ticketType,
-            numberOfTickets: item.quantity,
-          })),
-          ...(affiliateID ? { affiliateID } : {}),
-        });
-      } else {
-        checkEmailMutation.mutate(formData);
-      }
+      checkEmailMutation.mutate(formData);
     },
     validationSchema: accountCreationSchema,
   });
 
-  React.useEffect(() => {
-    if (userDetails) {
-      if (userDetails.firstName) setFieldValue("firstName", userDetails.firstName);
-      if (userDetails.lastName) setFieldValue("lastName", userDetails.lastName);
-      if (userDetails.email) setFieldValue("email", userDetails.email);
+  const handlePaySignedIn = () => {
+    const buyerEmail =
+      userDetails?.email ||
+      session?.user?.email ||
+      "";
+
+    if (lastOrderCode && totalSelectedTicketPrice > 0) {
+      triggerPaystack(lastOrderCode, buyerEmail, totalSelectedTicketPrice);
+      return;
     }
-  }, [userDetails]);
+
+    createTicket({
+      eventID: event?.id as string,
+      ticketBuyObjectList: (selectedTickets || []).map((item) => ({
+        ticketType: item.ticketType,
+        numberOfTickets: item.quantity,
+      })),
+      ...(affiliateID ? { affiliateID } : {}),
+    });
+  };
 
   const isFormLoading =
     createTicketIsLoading ||
@@ -344,6 +432,239 @@ function AccountSetup() {
       : `${RESOURCE_URL}${event.currentPicUrl}`
     : "/images/tech-event.jpg";
 
+  const routeToLandingPage = () => {
+
+    const queryParams = new URLSearchParams({
+      eventId: event?.id || '',
+    });
+    router.push(`${LANDINGPAGE_URL}/auth?${queryParams.toString()}`);
+  }
+
+  // --- SIGNED-IN PREVIEW VIEW ---
+  // Preview ticket selection and buyer profile before initiating payment
+  if (isLoggedIn) {
+    return (
+      <Box w="full" bg="white" borderRadius="2xl" overflow="hidden">
+        {/* Top Header */}
+        <HStack
+          px={["4", "6"]}
+          py="4"
+          borderBottomWidth="1px"
+          borderColor="gray.100"
+          justifyContent="space-between"
+          alignItems="center"
+        >
+          <HStack gap="3">
+            <IconButton
+              aria-label="Go back to ticket selection"
+              variant="ghost"
+              size="sm"
+              rounded="full"
+              onClick={() => setStep(1)}
+            >
+              <ArrowLeft size="18" />
+            </IconButton>
+            <VStack align="start" gap="0">
+              <Text fontSize="lg" fontWeight="bold">
+                Review & Confirm Selection
+              </Text>
+              <Text fontSize="xs" color="gray.500">
+                Preview your ticket order before proceeding to payment
+              </Text>
+            </VStack>
+          </HStack>
+        </HStack>
+
+        <Box p={["4", "6"]}>
+          {/* User Account Card */}
+          <Flex
+            mb="4"
+            p="3.5"
+            borderRadius="12px"
+            borderWidth="1px"
+            borderColor="gray.200"
+            bgColor="gray.50"
+            justifyContent="space-between"
+            alignItems="center"
+            flexWrap="wrap"
+            gap="3"
+          >
+            <HStack gap="3">
+              <Flex
+                w="38px"
+                h="38px"
+                borderRadius="full"
+                bgColor="primaryColor"
+                color="white"
+                alignItems="center"
+                justifyContent="center"
+              >
+                <User size="20" color="#fff" />
+              </Flex>
+              <VStack align="start" gap="0">
+                <HStack gap="2">
+                  <Text fontWeight="bold" fontSize="sm">
+                    {userDetails
+                      ? `${userDetails.firstName || ""} ${userDetails.lastName || ""}`.trim() || "Signed In User"
+                      : "Signed In User"}
+                  </Text>
+                  <Badge colorPalette="green" size="sm" rounded="full">
+                    Signed In
+                  </Badge>
+                </HStack>
+                <Text fontSize="xs" color="gray.500">
+                  {userDetails?.email || session?.user?.email || "Account verified"}
+                </Text>
+              </VStack>
+            </HStack>
+
+            <Button
+              variant="ghost"
+              size="xs"
+              color="gray.500"
+              _hover={{ color: "red.500" }}
+              onClick={handleSignOut}
+            >
+              Switch Account
+            </Button>
+          </Flex>
+
+          {/* Event Preview Pill */}
+          <HStack
+            mb="4"
+            p="3.5"
+            borderRadius="12px"
+            borderWidth="1px"
+            borderColor="gray.200"
+            bgColor="white"
+            gap="3"
+            alignItems="center"
+          >
+            <Image
+              src={eventBannerUrl}
+              alt={event?.eventName || "Event"}
+              w="52px"
+              h="52px"
+              objectFit="cover"
+              borderRadius="8px"
+            />
+            <VStack align="start" gap="0.5" flex="1">
+              <Text fontWeight="semibold" fontSize="sm" lineClamp={1}>
+                {event?.eventName || "Event"}
+              </Text>
+              <Text fontSize="xs" color="gray.500">
+                {event?.startDate
+                  ? new Date(event.startDate).toLocaleString("en-US", {
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                    hour12: true,
+                  })
+                  : "Upcoming"}
+              </Text>
+              {event?.location?.locationDetails && (
+                <Text fontSize="xs" color="gray.400" lineClamp={1}>
+                  📍 {event.location.locationDetails}
+                </Text>
+              )}
+            </VStack>
+            <Text fontWeight="bold" fontSize="sm" color="primaryColor">
+              {totalSelectedTicketPrice === 0
+                ? "Free"
+                : `NGN ${formatNumber(totalSelectedTicketPrice)}`}
+            </Text>
+          </HStack>
+
+          {/* Selected Tickets Breakdown */}
+          <Box
+            mb="5"
+            p="4"
+            borderRadius="12px"
+            borderWidth="1px"
+            borderColor="gray.200"
+            bgColor="gray.50"
+          >
+            <Flex justifyContent="space-between" alignItems="center" mb="2.5">
+              <Text fontSize="xs" fontWeight="bold" color="gray.600" textTransform="uppercase">
+                Selected Tickets ({selectedTickets?.reduce((acc, curr) => acc + (curr.quantity || 0), 0) || 0})
+              </Text>
+              <Button
+                variant="ghost"
+                size="xs"
+                color="primaryColor"
+                onClick={() => setStep(1)}
+              >
+                Edit Selection
+              </Button>
+            </Flex>
+
+            <VStack align="stretch" gap="2">
+              {selectedTickets?.map((item, idx) => (
+                <Flex key={idx} justify="space-between" fontSize="sm" py="1">
+                  <HStack gap="2">
+                    <Badge size="sm" variant="subtle" colorPalette="blue" rounded="md">
+                      {item.quantity}x
+                    </Badge>
+                    <Text fontWeight="medium" color="gray.800">
+                      {item.ticketType}
+                    </Text>
+                  </HStack>
+                  <Text fontWeight="semibold" color="gray.700">
+                    NGN {formatNumber(getTicketPrice(item.ticketType) * item.quantity)}
+                  </Text>
+                </Flex>
+              ))}
+
+              <Box my="2" borderBottomWidth="1px" borderColor="gray.200" />
+
+              <Flex justify="space-between" fontSize="md" fontWeight="bold">
+                <Text>Total to Pay</Text>
+                <Text color="primaryColor" fontSize="lg">
+                  {totalSelectedTicketPrice === 0
+                    ? "Free"
+                    : `NGN ${formatNumber(totalSelectedTicketPrice)}`}
+                </Text>
+              </Flex>
+            </VStack>
+          </Box>
+
+          {/* Pay Button */}
+          <Button
+            w="full"
+            h="48px"
+            bgColor="primaryColor"
+            size="lg"
+            color="white"
+            borderRadius="full"
+            fontWeight="semibold"
+            disabled={createTicketIsLoading}
+            loading={createTicketIsLoading}
+            loadingText="Processing..."
+            onClick={handlePaySignedIn}
+            _hover={{ opacity: 0.9 }}
+            transition="all 0.2s"
+          >
+            {totalSelectedTicketPrice === 0
+              ? "Get Free Ticket"
+              : `Pay NGN ${formatNumber(totalSelectedTicketPrice)}`}
+          </Button>
+
+          <HStack w="full" justifyContent="center" mt="3">
+            <Text color="gray.400" fontSize="12px">
+              Secured by
+            </Text>
+            <Text color="primaryColor" fontSize="12px" fontWeight={600}>
+              Paystack
+            </Text>
+          </HStack>
+        </Box>
+      </Box>
+    );
+  }
+
+  // --- GUEST CHECKOUT VIEW ---
   return renderForm(
     <Box w="full" bg="white" borderRadius="2xl" overflow="hidden">
       {/* Top Header */}
@@ -379,6 +700,31 @@ function AccountSetup() {
       <Flex w="full" flexDir={["column", "column", "row"]} gap="0">
         {/* Left Side: Form */}
         <Box flex="1" p={["4", "6"]}>
+          {/* Sign In Banner for Existing Users */}
+          <Flex
+            mb="4"
+            p="3"
+            borderRadius="12px"
+            bgColor="blue.50"
+            borderWidth="1px"
+            borderColor="blue.100"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <Text fontSize="xs" color="blue.700">
+              Have a Chasescroll account?
+            </Text>
+            <Button
+              size="xs"
+              variant="outline"
+              colorPalette="blue"
+              borderRadius="full"
+              onClick={() => routeToLandingPage()}
+            >
+              Sign In
+            </Button>
+          </Flex>
+
           {/* Compact Event Pill */}
           <HStack
             mb="4"
@@ -405,13 +751,13 @@ function AccountSetup() {
               <Text fontSize="xs" color="gray.500">
                 {event?.startDate
                   ? new Date(event.startDate).toLocaleString("en-US", {
-                      weekday: "short",
-                      month: "short",
-                      day: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit",
-                      hour12: true,
-                    })
+                    weekday: "short",
+                    month: "short",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                    hour12: true,
+                  })
                   : "Upcoming"}
               </Text>
             </VStack>
@@ -431,6 +777,7 @@ function AccountSetup() {
                   type="text"
                   label="First Name"
                   placeholder="Enter first name"
+                  autoComplete="off"
                 />
               </Box>
               <Box flex="1">
@@ -439,6 +786,7 @@ function AccountSetup() {
                   type="text"
                   label="Last Name"
                   placeholder="Enter last name"
+                  autoComplete="off"
                 />
               </Box>
             </Flex>
@@ -449,6 +797,7 @@ function AccountSetup() {
                 type="email"
                 label="Email Address"
                 placeholder="Enter email address"
+                autoComplete="off"
               />
               {showLink && (
                 <Box mt="2" p="2.5" borderRadius="8px" bg="red.50" borderWidth="1px" borderColor="red.200">
@@ -456,7 +805,7 @@ function AccountSetup() {
                     An account already exists with this email. For security, please{" "}
                     <Text
                       as="span"
-                      onClick={() => setStep(3)}
+                      onClick={() => routeToLandingPage()}
                       cursor="pointer"
                       color="primaryColor"
                       fontWeight="bold"
