@@ -4,65 +4,47 @@ import { atom, useAtom, useAtomValue } from 'jotai';
 import React from 'react'
 import LoginModal from '../TicketPurchaseModal/LoginModal';
 import { currentIdAtom } from '@/views/share/Event';
-import TicketPurchaseSuccessModal from '../TicketPurchaseModal/TicketPurchaseSuccessModal';
-import { STORAGE_KEYS } from '@/utils/StorageKeys';
-import FundRaiserAccountSetup from './FundRaiserAccountSetup';
 import { activeFundRaiserAtom, donationAmountAtom } from '@/states/activeFundraiser';
-import { Check, TickCircle } from 'iconsax-reactjs';
+import { TickCircle } from 'iconsax-reactjs';
 import { formatNumber } from '@/utils/formatNumber';
+import FundRaiserAccountSetup from './FundRaiserAccountSetup';
+import { IDonationList } from '@/models/donation';
 
-const titles = [
-    'Select Tickets',
-    'Enter Details',
-    'Verify Your Email'
-]
 interface IProps {
     isOpen: boolean;
     onClose: () => void;
-    type: 'EVENT' | 'FUNDRAISER' | 'PRODUCT'
+    type: 'EVENT' | 'FUNDRAISER' | 'PRODUCT';
+    event?: IDonationList | null;
 }
 
-function FundRaiserModal({ isOpen, onClose }: IProps) {
-
-    const [quantity, setQuantity] = useAtom(ticketCountAtom)
+function FundRaiserModal({ isOpen, onClose, event }: IProps) {
     const [currentStep, setCurrentStep] = useAtom(ticketurchaseStepAtom);
-    const [event, setEvent] = useAtom(activeEventAtom);
-    const [activeTicket, setActiveTicket] = useAtom(activeTicketAtom);
     const currentId = useAtomValue(currentIdAtom);
-    const createdTicket = useAtomValue(createdTicketAtom);
-    const [activeFundRaider, setActiveFundRaiser] = useAtom(activeFundRaiserAtom);
-    const [amount, setAmount] = useAtom(donationAmountAtom);
-    const [canPay, setCanPay] = useAtom(canPayAtom);
+    const [, setActiveFundRaiser] = useAtom(activeFundRaiserAtom);
+    const [amount] = useAtom(donationAmountAtom);
+    const [, setCanPay] = useAtom(canPayAtom);
 
     React.useEffect(() => {
-        setActiveFundRaiser(() => {
-            const data = localStorage.getItem(STORAGE_KEYS.DONATION_DETAILS);
-            if (data) {
-                return JSON.parse(data);
-            } else {
-                return null;
-            }
-        });
-
-        setAmount(() => {
-            const data = localStorage.getItem(STORAGE_KEYS.DONATION_AMOUNT);
-            if (data) {
-                return Number(data);
-            } else {
-                return 0;
-            }
-        })
-    }, [])
+        if (event) {
+            setActiveFundRaiser(event);
+        }
+    }, [event, setActiveFundRaiser]);
 
     return (
-        <Dialog.Root lazyMount open={isOpen} onOpenChange={() => {
-            setCurrentStep(1);
-            setActiveFundRaiser(null)
-            setAmount(0)
-            setCanPay(false);
-            localStorage.clear()
-            onClose();
-        }} size={currentStep === 3 ? 'sm' : 'xl'} placement={'center'} closeOnEscape={false} closeOnInteractOutside={false} modal={false}>
+        <Dialog.Root
+            lazyMount
+            open={isOpen}
+            onOpenChange={() => {
+                setCurrentStep(1);
+                setCanPay(false);
+                onClose();
+            }}
+            size={currentStep === 3 ? 'sm' : 'xl'}
+            placement={'center'}
+            closeOnEscape={false}
+            closeOnInteractOutside={false}
+            modal={false}
+        >
             <Portal>
                 <Dialog.Backdrop />
                 <Dialog.Positioner>
@@ -76,7 +58,8 @@ function FundRaiserModal({ isOpen, onClose }: IProps) {
                                     callbackUrl={`/share/fundraiser/${currentId}`}
                                     onLoggedIn={() => {
                                         setCurrentStep(1);
-                                    }} />
+                                    }}
+                                />
                             )}
                             {currentStep === 3 && (
                                 <Box
@@ -134,7 +117,7 @@ function FundRaiserModal({ isOpen, onClose }: IProps) {
                                             color="gray.800"
                                             mt="10px"
                                         >
-                                            {formatNumber(amount)}
+                                            NGN {formatNumber(amount)}
                                         </Text>
                                     </Box>
                                 </Box>
@@ -147,7 +130,7 @@ function FundRaiserModal({ isOpen, onClose }: IProps) {
                 </Dialog.Positioner>
             </Portal>
         </Dialog.Root>
-    )
+    );
 }
 
 export default FundRaiserModal;

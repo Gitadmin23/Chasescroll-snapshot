@@ -31,19 +31,27 @@ import ProductImageScroller from '@/components/Custom/productImageScroller';
 import ShareButton from '@/components/Custom/ShareButton';
 import { textLimit } from '@/utils/textlimiter';
 import GetCreatorData from '@/components/getCreatorData';
+import { currentIdAtom } from '@/views/share/Event';
 
 function Fundraiser({ id }: { id: string }) {
+    const setCurrentId = useSetAtom(currentIdAtom);
     const setFundRaiser = useSetAtom(activeFundRaiserAtom);
     const [currentStep, setCurrentStep] = useAtom(ticketurchaseStepAtom);
     const {
         mainBackgroundColor,
         primaryColor,
         borderColor
-    } = useCustomTheme()
+    } = useCustomTheme();
 
     const [event, setEvent] = React.useState<IDonationList | any>(null);
     const [showModal, setShowModal] = React.useState(false);
 
+    // Sync currentId for callbackUrl in login modal
+    React.useEffect(() => {
+        if (id) {
+            setCurrentId(id);
+        }
+    }, [id, setCurrentId]);
 
     const { isLoading, data, isError, error } = useQuery({
         queryKey: [`get-external-fundraiser-by-id-${id}`],
@@ -51,46 +59,88 @@ function Fundraiser({ id }: { id: string }) {
             params: {
                 id
             }
-        })
-    })
+        }),
+        enabled: Boolean(id),
+    });
 
-    console.log(data);
-    
-
+    // Reset purchase step on mount
     React.useEffect(() => {
-        // INITIALIZE VALUES IF THEY EXIST
-        const step = localStorage.getItem(STORAGE_KEYS.CURRENT_STEP);
-        if (step) {
-            setCurrentStep(() => {
-                return step ? Number(step) : 1;
-            });
+        setCurrentStep(1);
+    }, [setCurrentStep]);
 
-            if (Number(step) > 1) {
-                setShowModal(true);
-            }
-        }
-    }, [])
-
+    // Populate fundraiser state
     React.useEffect(() => {
         if (!isLoading && !isError && data?.data) {
             const item: PaginatedResponse<IDonationList> = data?.data;
-            setEvent(item?.content[0]);
-            setFundRaiser(item?.content[0]);
+            const currentItem = item?.content?.[0];
+            if (currentItem) {
+                setEvent(currentItem);
+                setFundRaiser(currentItem);
+            }
         }
-    }, [data, isError, isLoading]);
+    }, [data, isError, isLoading, setFundRaiser]);
 
     // Dynamically update the page title when event data loads
     React.useEffect(() => {
         if (event?.name) {
-            document.title = `Fundraiser | ${event.name}`;
+            document.title = `Fundraiser | ${capitalizeFLetter(event.name)}`;
         } else {
             document.title = 'Fundraiser | Fundraiser';
         }
     }, [event?.name]);
 
+    // Clear out tokens when user leaves the page (like Event.tsx)
+    React.useEffect(() => {
+        const handleClearTokens = () => {
+            try {
+                if (typeof window !== "undefined") {
+                    sessionStorage.removeItem(STORAGE_KEYS.token);
+                    sessionStorage.removeItem("token");
+                    sessionStorage.removeItem(STORAGE_KEYS.refreshToken);
+                    sessionStorage.removeItem("refresh_token");
+                    sessionStorage.removeItem("tp_token");
+                    sessionStorage.removeItem(STORAGE_KEYS.USER_ID);
+                    sessionStorage.removeItem("user_id");
+                    sessionStorage.removeItem(STORAGE_KEYS.USER_DETAILS);
+                    sessionStorage.removeItem(STORAGE_KEYS.CURRENT_STEP);
+
+                    localStorage.removeItem(STORAGE_KEYS.token);
+                    localStorage.removeItem("token");
+                    localStorage.removeItem(STORAGE_KEYS.refreshToken);
+                    localStorage.removeItem("refresh_token");
+                    localStorage.removeItem(STORAGE_KEYS.USER_ID);
+                    localStorage.removeItem("user_id");
+                    localStorage.removeItem(STORAGE_KEYS.USER_DETAILS);
+                    localStorage.removeItem(STORAGE_KEYS.CURRENT_STEP);
+                }
+                if (typeof document !== "undefined") {
+                    document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+                    document.cookie = "chase_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
+                }
+            } catch (err) {
+                console.error("Error clearing token on page leave:", err);
+            }
+        };
+
+        window.addEventListener("beforeunload", handleClearTokens);
+        window.addEventListener("pagehide", handleClearTokens);
+
+        return () => {
+            handleClearTokens();
+            window.removeEventListener("beforeunload", handleClearTokens);
+            window.removeEventListener("pagehide", handleClearTokens);
+        };
+    }, []);
+
+    const handleDonate = React.useCallback(() => {
+        if (!event?.id) return;
+        setFundRaiser(event);
+        setShowModal(true);
+    }, [event, setFundRaiser, setShowModal]);
+
     return (
         <Flex w={"full"} bgColor={mainBackgroundColor} flexDir={"column"} gap={"4"} px={["4", "4", "6"]} pb={["400px", "400px", "6"]} py={"6"} >
-            <FundRaiserModal isOpen={showModal} onClose={() => setShowModal(false)} type='FUNDRAISER' />
+            <FundRaiserModal isOpen={showModal} onClose={() => setShowModal(false)} type='FUNDRAISER' event={event} />
             <BreadCrumbs {...event} />
 
             <Flex w={"full"} gap={"4"} flexDir={["column", "column", "row"]} >
@@ -120,11 +170,9 @@ function Fundraiser({ id }: { id: string }) {
 
                             <Flex display={["flex", "flex", "none"]} justifyContent={"end"} flex={"1"} >
                                 <Flex bgColor={mainBackgroundColor} w={["full", "full", "full", "450px"]} maxW={["200px"]} shadow={"lg"} borderWidth={"1px"} borderColor={borderColor} rounded={"16px"} flexDir={"column"} overflowX={"hidden"} gap={"3"} p={["3", "3", "5"]}  >
-                                    {/* <Text fontSize={"18px"} fontWeight={"600"} >Click to Donate</Text> */}
-                                    <Button w="full" h="45px" px={"7"} fontWeight={"semibold"} borderRadius={'full'} color="white" bgColor="primaryColor" onClick={() => {
-                                        setFundRaiser(event);
-                                        setShowModal(true)
-                                    }}>Donate</Button>
+                                    <Button w="full" h="45px" px={"7"} fontWeight={"semibold"} borderRadius={'full'} color="white" bgColor="primaryColor" onClick={handleDonate}>
+                                        Donate
+                                    </Button>
                                 </Flex>
                             </Flex>
                         </Flex>
@@ -138,14 +186,10 @@ function Fundraiser({ id }: { id: string }) {
                     <Flex w={"full"} justifyContent={"end"} >
                         <Flex maxW={"600px"} display={["none", "none", "flex"]} >
                             <Flex insetX={"6"} bottom={["14", "14", "0px", "0px", "0px"]} pos={["fixed", "fixed", "relative", "relative"]} w={["auto", "auto", "full", "fit-content"]} display={["none", "none", "flex"]} zIndex={"50"} flexDir={"column"} gap={"4"} pb={"6"} px={["0px", "0px", "6", "6"]} >
-                                {/* <DonationPayment data={item} /> */}
-
                                 <Flex bgColor={mainBackgroundColor} w={["full", "full", "full", "450px"]} maxW={["250px"]} shadow={"lg"} borderWidth={"1px"} borderColor={borderColor} rounded={"16px"} flexDir={"column"} overflowX={"hidden"} gap={"3"} p={["3", "3", "5"]}  >
-                                    {/* <Text fontSize={"18px"} fontWeight={"600"} >Click to Donate</Text> */}
-                                    <Button w="full" h="45px" px={"7"} fontWeight={"semibold"} borderRadius={'full'} color="white" bgColor="primaryColor" onClick={() => {
-                                        setFundRaiser(event);
-                                        setShowModal(true)
-                                    }}>Donate</Button>
+                                    <Button w="full" h="45px" px={"7"} fontWeight={"semibold"} borderRadius={'full'} color="white" bgColor="primaryColor" onClick={handleDonate}>
+                                        Donate
+                                    </Button>
                                 </Flex>
                             </Flex>
                         </Flex>
@@ -156,4 +200,4 @@ function Fundraiser({ id }: { id: string }) {
     )
 }
 
-export default Fundraiser
+export default Fundraiser;

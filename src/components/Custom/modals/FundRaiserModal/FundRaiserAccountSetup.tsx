@@ -1,3 +1,6 @@
+"use client";
+
+import React, { useState } from "react";
 import {
   Box,
   Button,
@@ -8,26 +11,20 @@ import {
   Text,
   Input,
   Badge,
-  IconButton,
 } from "@chakra-ui/react";
-import React, { useState } from "react";
-import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { useAtom, useSetAtom } from "jotai";
 import { useMutation } from "@tanstack/react-query";
+import { usePaystackPayment } from "react-paystack";
 import httpService from "@/services/httpService";
 import { URLS } from "@/services/urls";
 import { toaster } from "@/components/ui/toaster";
-import { signIn, useSession, getSession } from "next-auth/react";
+import { useSession } from "next-auth/react";
 import {
-  activeEventAtom,
-  activeTicketAtom,
-  canPayAtom,
-  createdTicketAtom,
-  currentUrlAtom,
+  isPaystackOpenAtom,
   paystackDetailsAtom,
-  ticketCountAtom,
   ticketurchaseStepAtom,
 } from "@/states/activeTicket";
-import { ArrowLeft, CloseSquare, Edit } from "iconsax-reactjs";
+import { User } from "iconsax-reactjs";
 import { formatNumber } from "@/utils/formatNumber";
 import { RESOURCE_URL } from "@/constants";
 import useForm from "@/hooks/useForm";
@@ -35,7 +32,6 @@ import { accountCreationSchema } from "@/services/validation";
 import CustomInput from "../../CustomInput";
 import { STORAGE_KEYS } from "@/utils/StorageKeys";
 import { ITicketCreatedModel } from "@/models/TicketCreatedModel";
-import PaymentButton from "../../PaymentButton";
 import { IUser } from "@/models/User";
 import {
   activeFundRaiserAtom,
@@ -52,137 +48,133 @@ export interface ICustomOrderDto {
   typeID: string;
 }
 
-interface Props {
-  params: {
-    type: string;
-  };
-  searchParams: {
-    id: string;
-  };
-}
-
 function FundRaiserAccountSetup() {
-  const [step, setStep] = useAtom(ticketurchaseStepAtom);
-  const [activeFundRaider, setActiveFundRaiser] = useAtom(activeFundRaiserAtom);
+  const [, setStep] = useAtom(ticketurchaseStepAtom);
+  const [activeFundRaider] = useAtom(activeFundRaiserAtom);
   const [amount, setAmount] = useAtom(donationAmountAtom);
-  const [canPay, setCanPay] = useAtom(canPayAtom);
   const [paystackDetails, setPaystackDetails] = useAtom(paystackDetailsAtom);
+  const setIsPaystackOpen = useSetAtom(isPaystackOpenAtom);
 
-  const {
-    primaryColor
-  } = useCustomTheme()
+  const { primaryColor } = useCustomTheme();
+  const { data: session } = useSession();
 
-  const [token, setToken] = React.useState(() =>
-    localStorage.getItem(STORAGE_KEYS.token)
-  );
-  const [userId, setUserId] = React.useState(() =>
-    localStorage.getItem(STORAGE_KEYS.USER_ID)
-  );
-  const [userDetails, setUserDetails] = React.useState<IUser | null>(() =>
-    JSON.parse(localStorage.getItem(STORAGE_KEYS.USER_DETAILS) as string)
-  );
-  const [isLoggedIn, setIsLoggedIn] = React.useState(() => {
-    const token = localStorage.getItem(STORAGE_KEYS.token);
-    const user_id = localStorage.getItem(STORAGE_KEYS.USER_ID);
-    return token !== null && user_id !== null;
-  });
-  const [googleAuthUsed, setGoogleAuthUsed] = React.useState(() =>
-    localStorage.getItem(STORAGE_KEYS.GOOGLE_AUTH)
-  );
-  const [showLink, setShowLink] = React.useState(false);
+  const [donationIsLoading, setDonationIsLoading] = useState(false);
+  const [showLink, setShowLink] = useState(false);
+  const [lastOrderCode, setLastOrderCode] = useState<string | null>(null);
 
-  const { data: session, status } = useSession();
-
+  // Reset paystack overlay state on unmount
   React.useEffect(() => {
-    if (userDetails && amount > 0) {
-      // setShowLink(true);
-      // create custom order
-      createCustomOrder.mutate({
-        seller: activeFundRaider?.createdBy?.userId || "",
-        price: amount,
-        currency: "NGN",
-        orderType: "DONATION",
-        typeID: activeFundRaider?.id || "",
-      });
-    }
-  }, [userDetails]);
+    return () => {
+      setIsPaystackOpen(false);
+    };
+  }, [setIsPaystackOpen]);
 
-  const { renderForm, values, setFieldValue, setValues } = useForm({
-    defaultValues: {
-      firstName: userDetails?.firstName || "",
-      lastName: userDetails?.lastName || "",
-      email: userDetails?.email || "",
-    },
-    onSubmit: (data) => {
-      if (userDetails) {
-        // check the amount
-        if (amount === 0) {
-          toaster.create({
-            title: "Amount is required",
-            description: "Please enter an amount",
-            type: "error",
-          });
-          return;
-        }
-        // create customorder
-        createCustomOrder.mutate({
-          seller: activeFundRaider?.createdBy?.userId || "",
-          price: amount,
-          currency: "NGN",
-          orderType: "DONATION",
-          typeID: activeFundRaider?.id || "",
-        });
-        return;
-      } else if (googleAuthUsed) {
-        // login with google
-        const idToken = session?.token?.idToken;
-        googleAuth.mutate(idToken);
-      } else {
-        checkEmailMutation(data);
+  const getStoredToken = React.useCallback(() => {
+    if (typeof window === "undefined") return null;
+    return (
+      sessionStorage.getItem(STORAGE_KEYS.token) ||
+      sessionStorage.getItem("token") ||
+      localStorage.getItem(STORAGE_KEYS.token) ||
+      localStorage.getItem("token")
+    );
+  }, []);
+
+  const getStoredUserId = React.useCallback(() => {
+    if (typeof window === "undefined") return null;
+    return (
+      sessionStorage.getItem(STORAGE_KEYS.USER_ID) ||
+      sessionStorage.getItem("user_id") ||
+      localStorage.getItem(STORAGE_KEYS.USER_ID) ||
+      localStorage.getItem("user_id")
+    );
+  }, []);
+
+  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
+    return Boolean(getStoredToken() && getStoredUserId());
+  });
+
+  const [userDetails, setUserDetails] = useState<IUser | null>(() => {
+    try {
+      if (typeof window === "undefined") return null;
+      const item =
+        sessionStorage.getItem(STORAGE_KEYS.USER_DETAILS) ||
+        localStorage.getItem(STORAGE_KEYS.USER_DETAILS);
+      return item ? JSON.parse(item) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  // Sync auth state & public profile
+  React.useEffect(() => {
+    try {
+      const token = getStoredToken();
+      const userId = getStoredUserId();
+      const logged = Boolean(token && userId);
+      setIsLoggedIn(logged);
+
+      const userItem =
+        sessionStorage.getItem(STORAGE_KEYS.USER_DETAILS) ||
+        localStorage.getItem(STORAGE_KEYS.USER_DETAILS);
+      if (userItem) {
+        setUserDetails(JSON.parse(userItem));
+      } else if (logged && userId) {
+        httpService
+          .get(`${URLS.GET_PUBLIC_PROIFLE}/${userId}`)
+          .then((res) => {
+            if (res.data) {
+              sessionStorage.setItem(
+                STORAGE_KEYS.USER_DETAILS,
+                JSON.stringify(res.data)
+              );
+              setUserDetails(res.data);
+            }
+          })
+          .catch(() => { });
       }
-    },
-    validationSchema: accountCreationSchema,
-  });
-
-  React.useEffect(() => {
-    if (googleAuthUsed) {
-      // LOGIN USER
-      const idToken = session?.token?.idToken;
-      googleAuth.mutate(idToken);
+    } catch (e) {
+      console.error("Error reading auth state:", e);
     }
-  }, [googleAuthUsed]);
+  }, [getStoredToken, getStoredUserId]);
 
-  React.useEffect(() => {
-    if (userDetails) {
-      setFieldValue("firstName", userDetails?.firstName || "", true).then();
-      setFieldValue("lastName", userDetails?.lastName || "", true).then();
-      setFieldValue("email", userDetails?.email || "", true).then();
+  const handleSignOut = React.useCallback(() => {
+    if (typeof window !== "undefined") {
+      sessionStorage.removeItem(STORAGE_KEYS.token);
+      sessionStorage.removeItem("token");
+      sessionStorage.removeItem(STORAGE_KEYS.refreshToken);
+      sessionStorage.removeItem("refresh_token");
+      sessionStorage.removeItem(STORAGE_KEYS.USER_ID);
+      sessionStorage.removeItem("user_id");
+      sessionStorage.removeItem(STORAGE_KEYS.USER_DETAILS);
+      sessionStorage.removeItem(STORAGE_KEYS.CURRENT_STEP);
+
+      localStorage.removeItem(STORAGE_KEYS.token);
+      localStorage.removeItem("token");
+      localStorage.removeItem(STORAGE_KEYS.refreshToken);
+      localStorage.removeItem("refresh_token");
+      localStorage.removeItem(STORAGE_KEYS.USER_ID);
+      localStorage.removeItem("user_id");
+      localStorage.removeItem(STORAGE_KEYS.USER_DETAILS);
+      localStorage.removeItem(STORAGE_KEYS.CURRENT_STEP);
     }
-  }, [userDetails]);
+    setUserDetails(null);
+    setIsLoggedIn(false);
+    setLastOrderCode(null);
+  }, []);
 
-  React.useEffect(() => {
-    if (token !== null && userId !== null) {
-      setIsLoggedIn(true);
-    }
-  }, [token, userId, status]);
+  const paystackConfig = React.useMemo(
+    () => ({
+      email: paystackDetails?.email || "",
+      amount: paystackDetails?.amount || 0,
+      reference: paystackDetails?.reference || "",
+      publicKey:
+        process.env.NEXT_PUBLIC_PAYSTACK_KEY ||
+        "pk_test_58a8e726bbe3cce8ade3082f4e49f46089046b5d",
+    }),
+    [paystackDetails]
+  );
 
-  const createCustomOrder = useMutation({
-    mutationFn: (data: ICustomOrderDto) =>
-      httpService.post(`${URLS.payments}/createCustomOrder`, data),
-    onError: (error) => {
-      console.log(error);
-    },
-    onSuccess: (data) => {
-      const item: ITicketCreatedModel = data?.data;
-      setPaystackDetails({
-        amount: item?.content?.orderTotal * 100,
-        email: userDetails?.email as string,
-        reference: item?.content?.orderCode,
-      });
-      setCanPay(true);
-      console.log("CUSTOM ORDER CREATED", data?.data);
-    },
-  });
+  const initializePayment = usePaystackPayment(paystackConfig);
 
   const createDonation = useMutation({
     mutationFn: (data: {
@@ -190,389 +182,602 @@ function FundRaiserAccountSetup() {
       fundRaiserID: string;
       amount: number;
     }) => httpService.post(`${URLS.donation}/create-donation`, data),
-    onError: (error) => {
+    onError: (error: any) => {
       toaster.create({
-        title: "An Error occured",
-        description: error?.message,
-        type: "error",
+        title: "Notice",
+        description: error?.message || "Payment recorded. If not reflected, please refresh.",
+        type: "info",
       });
+      setDonationIsLoading(false);
+      setStep(3);
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       toaster.create({
         title: "Success",
-        description: "Donation created successfully",
+        description: "Donation completed successfully!",
         type: "success",
       });
+      setDonationIsLoading(false);
       setStep(3);
     },
   });
 
-  const getPublicProfile = useMutation({
-    mutationFn: (data: any) =>
-      httpService.get(`${URLS.GET_PUBLIC_PROIFLE}/${data}`),
-    onError: (error) => { },
-    onSuccess: (data) => {
-      const details: IUser = data?.data;
-      console.log(`User details`, details);
-      setUserDetails(details);
-      localStorage.setItem(STORAGE_KEYS.USER_DETAILS, JSON.stringify(details));
-      setUserDetails(details);
-      setIsLoggedIn(true);
-      createCustomOrder.mutate({
-        seller: activeFundRaider?.createdBy?.userId || "",
-        price: amount,
+  const triggerPaystack = React.useCallback(
+    (orderCode: string, buyerEmail: string, orderTotal: number) => {
+      const amountInKobo = Math.round(Number(orderTotal) * 100);
+      setLastOrderCode(orderCode);
+
+      try {
+        setIsPaystackOpen(true);
+        initializePayment({
+          config: {
+            email: buyerEmail,
+            amount: amountInKobo,
+            reference: orderCode,
+          },
+          onSuccess: () => {
+            setIsPaystackOpen(false);
+            const uId = userDetails?.userId || getStoredUserId() || "";
+            createDonation.mutate({
+              userID: uId,
+              fundRaiserID: activeFundRaider?.id as string,
+              amount: Number(orderTotal),
+            });
+          },
+          onClose: () => {
+            setIsPaystackOpen(false);
+            setDonationIsLoading(false);
+            toaster.create({
+              title: "Payment Window Closed",
+              description: "Donation was not completed. Click to retry when ready.",
+              type: "info",
+            });
+          },
+        });
+      } catch (err: any) {
+        setIsPaystackOpen(false);
+        setDonationIsLoading(false);
+        toaster.create({
+          title: "Payment Gateway Error",
+          description: err?.message || "Could not launch Paystack. Please try again.",
+          type: "error",
+        });
+      }
+    },
+    [initializePayment, createDonation, userDetails, getStoredUserId, activeFundRaider, setIsPaystackOpen]
+  );
+
+  const handleInitiateDonation = async (buyerEmail: string) => {
+    if (!amount || amount <= 0) {
+      toaster.create({
+        title: "Amount is required",
+        description: "Please enter a valid donation amount.",
+        type: "error",
+      });
+      return;
+    }
+
+    setDonationIsLoading(true);
+
+    try {
+      const sellerId =
+        activeFundRaider?.createdBy?.userId ||
+        activeFundRaider?.creatorID ||
+        activeFundRaider?.user?.userId ||
+        "";
+
+      const orderPayload: ICustomOrderDto = {
+        seller: sellerId,
+        price: Number(amount),
         currency: "NGN",
         orderType: "DONATION",
         typeID: activeFundRaider?.id || "",
-      });
-    },
-  });
+      };
 
-  const googleAuth = useMutation({
-    mutationFn: async (data: any) =>
-      httpService.get(`${URLS.auth}/signinWithCredentials`, {
-        headers: {
-          Authorization: `Bearer ${data}`,
-        },
-      }),
-    onError: (error) => {
-      toaster.create({
-        title: "Login failed",
-        description: error?.message || "Invalid credentials",
-        type: "error",
-      });
-    },
-    onSuccess: (data) => {
-      console.log("Login successful", data?.data);
-      localStorage.setItem(STORAGE_KEYS.USER_ID, data?.data?.user_id);
-      localStorage.setItem(STORAGE_KEYS.token, data?.data?.access_token);
-      localStorage.setItem(
-        STORAGE_KEYS.refreshToken,
-        data?.data?.refresh_token
-      );
-      const user_id = localStorage.getItem(STORAGE_KEYS.USER_ID);
-      getPublicProfile.mutate(user_id);
-    },
-  });
+      const res = await httpService.post(`${URLS.payments}/createCustomOrder`, orderPayload);
+      const item: ITicketCreatedModel = res.data;
 
-  const { mutate: checkEmailMutation, isPending } = useMutation({
-    mutationFn: async (data: any) =>
-      httpService.post(`${URLS.auth}/temporary-signup`, data),
-    onError: (error) => {
-      toaster.create({
-        title: "An error occured",
-        description: error?.message,
-        type: "error",
-      });
-      // setStep((prev) => prev + 1);
-    },
-    onSuccess: (data) => {
-      console.log("data", data?.data);
-      if (data?.data["stackTrace"]) {
-        // save everything in local storage
-        localStorage.setItem(STORAGE_KEYS.CURRENT_STEP, step.toString());
-        localStorage.setItem(STORAGE_KEYS.DONATION_AMOUNT, amount.toString());
-        localStorage.setItem(
-          STORAGE_KEYS.DONATION_DETAILS,
-          JSON.stringify(activeFundRaider)
-        );
-        setShowLink(true);
+      if (!item?.content?.orderCode) {
         toaster.create({
-          title: "Alert!",
-          description: data?.data?.message,
+          title: "Error",
+          description: item?.message || "Failed to create donation order.",
+          type: "error",
+        });
+        setDonationIsLoading(false);
+        return;
+      }
+
+      const orderCode = item.content.orderCode;
+      const orderTotal = item.content.orderTotal || amount;
+
+      setPaystackDetails({
+        amount: orderTotal * 100,
+        email: buyerEmail,
+        reference: orderCode,
+      });
+
+      triggerPaystack(orderCode, buyerEmail, orderTotal);
+    } catch (err: any) {
+      setDonationIsLoading(false);
+      toaster.create({
+        title: "Error",
+        description:
+          err?.response?.data?.message || err?.message || "Failed to initiate donation payment.",
+        type: "error",
+      });
+    }
+  };
+
+  const getPublicProfile = useMutation({
+    mutationFn: (uId: string) => httpService.get(`${URLS.GET_PUBLIC_PROIFLE}/${uId}`),
+    onSuccess: (data) => {
+      const details: IUser = data?.data;
+      if (details && typeof window !== "undefined") {
+        sessionStorage.setItem(STORAGE_KEYS.USER_DETAILS, JSON.stringify(details));
+        localStorage.setItem(STORAGE_KEYS.USER_DETAILS, JSON.stringify(details));
+      }
+      setUserDetails(details);
+      setIsLoggedIn(true);
+
+      const email = details?.email || values?.email || "";
+      handleInitiateDonation(email + "");
+    },
+    onError: () => {
+      const email = values?.email || "";
+      handleInitiateDonation(email + "");
+    },
+  });
+
+  const checkEmailMutation = useMutation({
+    mutationFn: async (formData: any) =>
+      httpService.post(`${URLS.auth}/temporary-signup`, formData),
+    onError: (error: any) => {
+      setDonationIsLoading(false);
+      toaster.create({
+        title: "Error",
+        description: error?.response?.data?.message || error?.message || "Could not proceed with temporary account setup",
+        type: "error",
+      });
+    },
+    onSuccess: (data) => {
+      if (data?.data?.["stackTrace"]) {
+        setShowLink(true);
+        setDonationIsLoading(false);
+        toaster.create({
+          title: "Account exists",
+          description: data?.data?.message || "This email already exists. Please sign in.",
           type: "info",
         });
-        return;
       } else {
-        setUserId(data?.data?.user_id);
-        setToken(data?.data?.access_token);
-        localStorage.setItem(STORAGE_KEYS.token, data?.data?.access_token);
-        localStorage.setItem(STORAGE_KEYS.USER_ID, data?.data?.user_id);
-        getPublicProfile.mutate(data?.data?.user_id);
+        const accessToken = data?.data?.access_token;
+        const refreshToken = data?.data?.refresh_token;
+        const userId = data?.data?.user_id;
+
+        if (typeof window !== "undefined") {
+          sessionStorage.setItem(STORAGE_KEYS.token, accessToken);
+          sessionStorage.setItem("token", accessToken);
+          sessionStorage.setItem(STORAGE_KEYS.USER_ID, userId);
+          sessionStorage.setItem("user_id", userId);
+          sessionStorage.setItem(STORAGE_KEYS.refreshToken, refreshToken);
+          sessionStorage.setItem("refresh_token", refreshToken);
+
+          localStorage.setItem(STORAGE_KEYS.token, accessToken);
+          localStorage.setItem("token", accessToken);
+          localStorage.setItem(STORAGE_KEYS.USER_ID, userId);
+          localStorage.setItem("user_id", userId);
+        }
+
+        getPublicProfile.mutate(userId);
       }
     },
   });
 
+  // Clean guest checkout form without prefilled user data
+  const { renderForm, values } = useForm({
+    defaultValues: {
+      firstName: "",
+      lastName: "",
+      email: "",
+    },
+    onSubmit: (formData: { firstName: string; lastName: string; email: string }) => {
+      if (!amount || amount <= 0) {
+        toaster.create({
+          title: "Amount is required",
+          description: "Please enter a valid donation amount.",
+          type: "error",
+        });
+        return;
+      }
+
+      if (lastOrderCode) {
+        triggerPaystack(lastOrderCode, formData.email, amount);
+        return;
+      }
+
+      setDonationIsLoading(true);
+      checkEmailMutation.mutate(formData);
+    },
+    validationSchema: accountCreationSchema,
+  });
+
+  const bannerImageUrl = activeFundRaider?.bannerImage
+    ? activeFundRaider.bannerImage.startsWith("http")
+      ? activeFundRaider.bannerImage
+      : `${RESOURCE_URL}${activeFundRaider.bannerImage}`
+    : "/images/tech-event.jpg";
+
+  const isFormLoading =
+    donationIsLoading ||
+    checkEmailMutation.isPending ||
+    getPublicProfile.isPending ||
+    createDonation.isPending;
+
+  // --- SIGNED-IN PREVIEW VIEW ---
+  if (isLoggedIn) {
+    const buyerEmail = userDetails?.email || session?.user?.email || "";
+    const buyerName =
+      userDetails?.firstName || userDetails?.lastName
+        ? `${userDetails.firstName || ""} ${userDetails.lastName || ""}`.trim()
+        : buyerEmail || "Donor";
+
+    return (
+      <Box w="full" bg="white" borderRadius="2xl" overflow="hidden">
+        {/* Top Header */}
+        <HStack
+          px={["4", "6"]}
+          py={3}
+          borderBottomWidth="1px"
+          borderColor="gray.100"
+          justifyContent="space-between"
+          bg="gray.50"
+        >
+          <HStack spaceX={2}>
+            <Box p={1.5} borderRadius="full" bg="blue.50" color="blue.600">
+              <User size="16" />
+            </Box>
+            <VStack align="start" spaceY={0}>
+              <Text fontSize="xs" color="gray.500">
+                Signed in as
+              </Text>
+              <Text fontSize="sm" fontWeight="semibold" color="gray.800" lineClamp={1}>
+                {buyerName}
+              </Text>
+            </VStack>
+          </HStack>
+          <Button
+            size="xs"
+            variant="outline"
+            colorPalette="gray"
+            borderRadius="full"
+            onClick={handleSignOut}
+            fontWeight="medium"
+          >
+            Change Account
+          </Button>
+        </HStack>
+
+        <Flex w="full" flexDir={["column", "column", "row"]}>
+          {/* Main Info & Checkout */}
+          <Box flex={[1, 1, "0.6", "0.6"]} p={["4", "6"]}>
+            <VStack align="stretch" spaceY={4}>
+              <HStack
+                p={4}
+                borderRadius="xl"
+                borderWidth="1px"
+                borderColor="gray.200"
+                spaceX={4}
+              >
+                <Image
+                  src={bannerImageUrl}
+                  w="100px"
+                  h="100px"
+                  objectFit="cover"
+                  borderRadius="lg"
+                  alt={activeFundRaider?.name || "Fundraiser"}
+                />
+                <VStack align="start" spaceY={1} flex="1">
+                  <Text fontWeight="bold" fontSize="md" color="gray.900" lineClamp={2}>
+                    {capitalizeFLetter(activeFundRaider?.name) || "Fundraiser"}
+                  </Text>
+                  <Text fontSize="xs" color="gray.500">
+                    Goal: NGN {formatNumber(Number(activeFundRaider?.goal || 0))}
+                  </Text>
+                  <HStack>
+                    <Text fontSize="xs" color="gray.500">
+                      Raised:
+                    </Text>
+                    <Badge colorPalette="green" fontSize="xs">
+                      NGN {formatNumber(Number(activeFundRaider?.total || 0))}
+                    </Badge>
+                  </HStack>
+                </VStack>
+              </HStack>
+
+              {/* Amount Input */}
+              <Box>
+                <Text fontSize="sm" fontWeight="semibold" color="gray.700" mb={2}>
+                  Donation Amount (NGN)
+                </Text>
+                <Input
+                  type="text"
+                  value={amount === 0 ? "" : amount}
+                  placeholder="Enter donation amount"
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (/^\d*$/.test(value)) {
+                      setAmount(Number(value));
+                    }
+                  }}
+                  width="full"
+                  height="45px"
+                  color="black"
+                  borderWidth="2px"
+                  borderColor="#E5E5E5"
+                  bgColor="#F5F5F5"
+                  borderRadius="full"
+                />
+              </Box>
+
+              {/* Donation Summary */}
+              <Box p={4} bg="gray.50" borderRadius="xl">
+                <Flex justify="space-between" align="center">
+                  <Text fontSize="sm" color="gray.600">
+                    Total Contribution
+                  </Text>
+                  <Text fontSize="lg" fontWeight="bold" color="gray.900">
+                    NGN {formatNumber(amount)}
+                  </Text>
+                </Flex>
+              </Box>
+
+              {/* Action Button */}
+              <Button
+                w="full"
+                h="50px"
+                bgColor="primaryColor"
+                color="white"
+                borderRadius="full"
+                fontWeight="semibold"
+                fontSize="md"
+                onClick={() => handleInitiateDonation(buyerEmail)}
+                loading={isFormLoading}
+                disabled={amount <= 0 || isFormLoading}
+                _hover={{ opacity: 0.9 }}
+              >
+                {amount > 0 ? `Donate NGN ${formatNumber(amount)}` : "Enter Donation Amount"}
+              </Button>
+            </VStack>
+          </Box>
+
+          {/* Right Summary Sidebar */}
+          <Box
+            flex="0.4"
+            bg="gray.50"
+            p={6}
+            display={["none", "none", "block"]}
+            borderLeftWidth="1px"
+            borderColor="gray.100"
+          >
+            <Box w="full" h="200px" overflow="hidden" borderRadius="xl" mb={4}>
+              <Image
+                src={bannerImageUrl}
+                w="100%"
+                h="100%"
+                objectFit="cover"
+                alt="Banner"
+              />
+            </Box>
+            <Text fontSize="md" fontWeight="bold" mb={2} color="gray.800">
+              Contribution Summary
+            </Text>
+            <VStack spaceY={2} align="stretch">
+              <Flex justify="space-between">
+                <Text fontSize="sm" color="gray.600">
+                  Donor
+                </Text>
+                <Text fontSize="sm" fontWeight="semibold" color="gray.900">
+                  {buyerName}
+                </Text>
+              </Flex>
+              <Flex justify="space-between">
+                <Text fontSize="sm" color="gray.600">
+                  Donation
+                </Text>
+                <Text fontSize="sm" fontWeight="bold" color={primaryColor}>
+                  NGN {formatNumber(amount)}
+                </Text>
+              </Flex>
+            </VStack>
+          </Box>
+        </Flex>
+      </Box>
+    );
+  }
+
+  // --- GUEST / TEMPORARY ACCOUNT VIEW ---
   return renderForm(
     <Box w="full" bg="white" borderRadius="xl" overflow="hidden">
       <Flex w="full">
         {/* Left Side - Checkout Form */}
-        <Box flex={[1, 1, "0.6", "0.6"]}>
-          {/* Header */}
+        <Box flex={[1, 1, "0.6", "0.6"]} p="20px">
+          <VStack align="start" spaceY={1} mb={6} borderBottomWidth="1px" borderColor="gray.100" pb={3}>
+            <Text fontSize="xl" fontWeight="bold" color="gray.900">
+              Donation Checkout
+            </Text>
+            <Text fontSize="xs" color="gray.500">
+              Enter your details to make a donation as guest
+            </Text>
+          </VStack>
+
+          {/* Event Info Card */}
           <HStack
             mb={6}
-            borderBottomWidth={"1px"}
-            spaceX={6}
-            borderBottomColor={"lightgrey"}
-            p="10px"
+            p={4}
+            borderRadius="lg"
+            borderWidth="1px"
+            borderColor="gray.200"
+            spaceX={4}
           >
-            {/* <IconButton
-                            aria-label="Go back"
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => }
-                        >
-                            <ArrowLeft size="20" />
-                        </IconButton> */}
-            <VStack align="start" spaceY={0}>
-              <Text fontSize="xl" fontWeight="bold">
-                Checkout
+            <Image
+              src={bannerImageUrl}
+              w="80px"
+              h="80px"
+              objectFit="cover"
+              borderRadius="md"
+              alt={activeFundRaider?.name || "Fundraiser"}
+            />
+            <VStack align="start" spaceY={1} flex="1">
+              <Text fontWeight="semibold" fontSize="sm" color="gray.900" lineClamp={2}>
+                {capitalizeFLetter(activeFundRaider?.name) || "Fundraiser"}
               </Text>
+              <Text fontSize="xs" color="gray.600">
+                Goal: NGN {formatNumber(Number(activeFundRaider?.goal || 0))}
+              </Text>
+              <HStack>
+                <Text fontSize="xs" color="gray.500">
+                  Raised:
+                </Text>
+                <Badge colorPalette="green" fontSize="xs">
+                  NGN {formatNumber(Number(activeFundRaider?.total || 0))}
+                </Badge>
+              </HStack>
             </VStack>
           </HStack>
 
-          <Box p="20px">
-            {/* Event Info */}
-            <HStack
-              mb={8}
-              p={4}
-              borderRadius="lg"
-              borderWidth="1px"
-              borderColor={"lightgrey"}
-            >
-              <Image
-                src={
-                  RESOURCE_URL + "/" + activeFundRaider?.bannerImage ||
-                  "/images/tech-event.jpg"
-                }
-                w="120px"
-                h="120px"
-                objectFit="cover"
-                borderRadius="md"
-              />
-              <VStack align="start" spaceY={1} flex="1">
-                <Text fontWeight="semibold">
-                  {capitalizeFLetter(activeFundRaider?.name) || "Tech Submit"}
+          {/* Donation Form */}
+          <VStack align="stretch" spaceY={4} mb={6}>
+            <Box>
+              <Flex justify="space-between" align="center" mb={1}>
+                <Text fontSize="sm" fontWeight="medium" color="gray.700">
+                  Donation Amount (NGN)
                 </Text>
-                <Text fontSize="sm" color="gray.600">
-                  {new Date(activeFundRaider?.endDate).toLocaleString("en-US", {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                    hour12: true,
-                  })}
-                </Text>
-                <Text fontSize="sm" color="gray.600">
-                  FundRaiser Goal - {" "}
-                  {formatNumber(activeFundRaider?.goal as number)}
-                </Text>
-                <HStack>
-                  <Text fontSize="xs" color="gray.500">
-                    Amount Raised
-                  </Text>
-                  <Badge colorScheme="red" fontSize="xs">
-                    {formatNumber(activeFundRaider?.total as number)}
-                  </Badge>
-                </HStack>
-              </VStack>
-            </HStack>
-
-            {/* Contact Information */}
-            {!canPay && (
-              <Flex align="start" flexDirection={"column"} gap={"3"} mb={8}>
-                <Flex gap={"1"} flexDir={"column"} w="full">
-                  <Flex gap={"2"} >
-                    <Text>Donation Amount - {formatNumber(amount)}</Text>
-                  </Flex>
-                  <Input
-                    type="text"
-                    value={amount === 0 ? "" : amount}
-                    placeholder="0"
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      // Only allow positive numbers
-                      if (/^\d*$/.test(value)) {
-                        setAmount(Number(value));
-                      }
-                    }}
-                    onKeyDown={(e) => {
-                      // Prevent non-numeric keys except backspace, delete, arrows
-                      if (
-                        !/^\d$/.test(e.key) &&
-                        ![
-                          "Backspace",
-                          "Delete",
-                          "ArrowLeft",
-                          "ArrowRight",
-                        ].includes(e.key)
-                      ) {
-                        e.preventDefault();
-                      }
-                    }}
-                    width="full"
-                    height={"45px"}
-                    color="black"
-                    borderWidth="2px"
-                    borderColor={"#E5E5E5"}
-                    bgColor="#F5F5F5"
-                    borderRadius={"full"}
-                  />
-                  {/* <Text
-                    fontWeight="semibold"
-                    display={["block", "block", "none", "none"]}
-                    mt="10px"
-                  >
+                {amount > 0 && (
+                  <Text fontSize="xs" fontWeight="bold" color={primaryColor}>
                     NGN {formatNumber(amount)}
-                  </Text> */}
-                </Flex>
-
-                <Flex
-                  flexDir={["column", "column", "row", "row"]}
-                  gap={"4"}
-                  w="full"
-                >
-                  <Box w="full">
-                    <CustomInput
-                      name="firstName"
-                      label="First Name"
-                      isPassword={false}
-                      type="text"
-                    />
-                  </Box>
-
-                  <Box w="full">
-                    <CustomInput
-                      name="lastName"
-                      label="Last Name"
-                      isPassword={false}
-                      type="text"
-                    />
-                  </Box>
-                </Flex>
-                <Box w="full">
-                  <CustomInput
-                    name="email"
-                    label="Email"
-                    isPassword={false}
-                    type="email"
-                  />
-                  {showLink && (
-                    <Flex flexDir={["row"]} w={"full"} justifyContent={"space-between"} gap={"2"} mt="10px">
-                      <Text color="red">
-                        This email address already exist. <span onClick={() => setStep(2)} style={{ textDecoration: "underline", color: primaryColor, cursor: "pointer" }} >Sign in</span>
-                      </Text>
-                      {/* <Text
-                        color="primaryColor"
-                        cursor={"pointer"}
-                        w={""}
-                        onClick={() => setStep(2)}
-                        textDecorationLine={"underline"}
-                      >
-                        
-                      </Text> */}
-                    </Flex>
-                  )}
-                </Box>
+                  </Text>
+                )}
               </Flex>
-            )}
-
-            {/* Footer */}
-            <HStack justify="space-between" align="center">
-              {!canPay && (
-                <Button
-                  w="full"
-                  h="50px"
-                  bgColor="primaryColor"
-                  size="lg"
-                  borderRadius="full"
-                  px={8}
-                  loading={
-                    isPending ||
-                    createCustomOrder.isPending ||
-                    googleAuth.isPending ||
-                    getPublicProfile.isPending
+              <Input
+                type="text"
+                value={amount === 0 ? "" : amount}
+                placeholder="0"
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (/^\d*$/.test(value)) {
+                    setAmount(Number(value));
                   }
-                  type={"submit"}
-                  fontWeight={"semibold"}
-                >
-                  Confirm Details
-                </Button>
-              )}
-              {canPay && (
-                <Flex flexDir={"column"} w={"full"} gap={"4"} >
+                }}
+                width="full"
+                height="45px"
+                color="black"
+                borderWidth="2px"
+                borderColor="#E5E5E5"
+                bgColor="#F5F5F5"
+                borderRadius="full"
+              />
+            </Box>
 
-                  {/* Order Summary */}
-                  <Flex display={["flex", "flex", "none"]} flexDir={"column"} gap={"2"} >
-                    <Text fontSize="lg" fontWeight="bold">
-                      Donation summary
-                    </Text> 
-                    <Flex gap={"2"} align="stretch">
-                      <Flex w={"full"} justify="space-between">
-                        <Text>Amount</Text>
-                        <Text fontWeight="semibold">NGN {formatNumber(amount)}</Text>
-                      </Flex>
-                    </Flex>
-                  </Flex>
-                  <PaymentButton
-                    reference={paystackDetails?.reference as string}
-                    email={paystackDetails?.email as string}
-                    amount={paystackDetails?.amount as number}
-                    isLoading={createDonation?.isPending}
-                    bgColor={primaryColor}
-                    onSucces={() =>
-                      createDonation.mutate({
-                        userID: userDetails?.userId as string,
-                        amount: amount,
-                        fundRaiserID: activeFundRaider?.id as string,
-                      })
-                    }
-                    text={"Pay"}
-                  />
+            <Flex flexDir={["column", "column", "row"]} gap="4" w="full">
+              <Box w="full">
+                <CustomInput
+                  name="firstName"
+                  label="First Name"
+                  isPassword={false}
+                  type="text"
+                />
+              </Box>
+
+              <Box w="full">
+                <CustomInput
+                  name="lastName"
+                  label="Last Name"
+                  isPassword={false}
+                  type="text"
+                />
+              </Box>
+            </Flex>
+
+            <Box w="full">
+              <CustomInput
+                name="email"
+                label="Email"
+                isPassword={false}
+                type="email"
+              />
+              {showLink && (
+                <Flex flexDir="row" w="full" justifyContent="space-between" gap="2" mt="10px">
+                  <Text color="red.500" fontSize="sm">
+                    This email address already exists.{" "}
+                    <span
+                      onClick={() => setStep(2)}
+                      style={{
+                        textDecoration: "underline",
+                        color: primaryColor,
+                        cursor: "pointer",
+                        fontWeight: 600,
+                      }}
+                    >
+                      Sign in
+                    </span>
+                  </Text>
                 </Flex>
               )}
-            </HStack>
-          </Box>
+            </Box>
+          </VStack>
+
+          {/* Submit Button */}
+          <Button
+            w="full"
+            h="50px"
+            bgColor="primaryColor"
+            color="white"
+            size="lg"
+            borderRadius="full"
+            px={8}
+            loading={isFormLoading}
+            type="submit"
+            fontWeight="semibold"
+            disabled={amount <= 0 || isFormLoading}
+            _hover={{ opacity: 0.9 }}
+          >
+            Confirm & Donate
+          </Button>
         </Box>
 
-        {/* Right Side - Event Image & Order Summary */}
+        {/* Right Side - Event Image & Summary */}
         <Box
           flex="0.4"
           position="relative"
-          bgColor="whitesmoke"
-          display={["none", "none", "block", "block"]}
+          bgColor="gray.50"
+          display={["none", "none", "block"]}
+          borderLeftWidth="1px"
+          borderColor="gray.100"
+          p={6}
         >
-          {/* Close Button */}
-          {/* <IconButton
-            aria-label="Close"
-            position="absolute"
-            top={4}
-            right={4}
-            zIndex={10}
-            variant="ghost"
-            color="white"
-            _hover={{ bg: "blackAlpha.600" }}
-          >
-            <CloseSquare size="24" />
-          </IconButton> */}
-
-          {/* Event Image */}
-          <Box w="100%" h="300px" overflow="hidden">
+          <Box w="100%" h="250px" overflow="hidden" borderRadius="xl" mb={4}>
             <Image
-              src={
-                RESOURCE_URL + "/" + activeFundRaider?.bannerImage ||
-                "/images/tech-event.jpg"
-              }
+              src={bannerImageUrl}
               w="100%"
-              h="300px"
+              h="100%"
               objectFit="cover"
+              alt="Banner"
             />
           </Box>
 
-          {/* Order Summary */}
-          <Box p={6}>
-            <Text fontSize="lg" fontWeight="bold" mb={4}>
-              Donation summary
-            </Text>
+          <Text fontSize="md" fontWeight="bold" mb={3} color="gray.800">
+            Donation Summary
+          </Text>
 
-            <VStack spaceY={3} align="stretch">
-              <Flex justify="space-between">
-                <Text>Amount</Text>
-                <Text fontWeight="semibold">NGN {formatNumber(amount)}</Text>
-              </Flex>
-            </VStack>
-          </Box>
+          <VStack spaceY={3} align="stretch">
+            <Flex justify="space-between">
+              <Text fontSize="sm" color="gray.600">
+                Amount
+              </Text>
+              <Text fontSize="sm" fontWeight="bold" color="gray.900">
+                NGN {formatNumber(amount)}
+              </Text>
+            </Flex>
+          </VStack>
         </Box>
       </Flex>
     </Box>
