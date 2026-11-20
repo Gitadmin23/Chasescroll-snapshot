@@ -23,11 +23,13 @@ import useCustomTheme from "@/hooks/useTheme";
 import DescriptionCard from "@/components/Custom/description";
 import GetCreatorData from "@/components/getCreatorData";
 import MapComponent from "@/components/Custom/MapComponent";
+import ShareButton from "@/components/Custom/ShareButton";
 import { CalendarIcon } from "@/components/svg";
 import { IoIosArrowForward } from "react-icons/io";
 import { FaXTwitter } from "react-icons/fa6";
 import { SlSocialLinkedin } from "react-icons/sl";
 import { Facebook, Instagram, Whatsapp } from "iconsax-reactjs";
+import { textLimit } from "@/utils/textlimiter";
 
 function getImageUrl(src?: string) {
   if (!src) return "";
@@ -94,8 +96,8 @@ export function ServiceDetail({ id }: { id: string }) {
     data?.discount && data?.discount > 0
       ? data.discount.toLocaleString()
       : data?.price
-      ? data.price.toLocaleString()
-      : "0";
+        ? data.price.toLocaleString()
+        : "0";
 
   if (isLoading) {
     return (
@@ -145,7 +147,7 @@ export function ServiceDetail({ id }: { id: string }) {
         </Text>
         <IoIosArrowForward />
         <Text fontSize="14px" fontWeight="500">
-          {data?.name}
+          {textLimit(data?.name, 20)}
         </Text>
       </Flex>
 
@@ -165,6 +167,7 @@ export function ServiceDetail({ id }: { id: string }) {
           borderColor={borderColor}
           overflow="hidden"
         >
+          <ShareButton itemLabel="Service" right="3" bottom="3" />
           {data?.images?.length > 0 && (
             <Image
               src={getImageUrl(data.images[activeImageIndex] || data.images[0])}
@@ -222,7 +225,7 @@ export function ServiceDetail({ id }: { id: string }) {
         <Flex w="full" flexDir="column" gap="3">
           <Flex w="full" flexDir="column" gap="2">
             <Text fontSize={["24px", "24px", "32px"]} fontWeight="700">
-              {capitalizeFLetter(data?.name)}
+              {capitalizeFLetter(textLimit(data?.name, 40))}
             </Text>
             {data?.phone && (
               <Text fontWeight="medium" color={bodyTextColor}>

@@ -5,6 +5,7 @@ import { Flex } from "@chakra-ui/react";
 import { IEventType } from "@/models/Event";
 import ProductImageScroller from "@/components/Custom/productImageScroller";
 import EventLocation from "@/components/Custom/eventLocation";
+import ShareButton from "@/components/Custom/ShareButton";
 
 interface EventMediaSectionProps {
     event: IEventType;
@@ -20,6 +21,7 @@ export default function EventMediaSection({ event, images }: EventMediaSectionPr
                     height={["340px", "340px", "520px"]}
                     images={images}
                 />
+                <ShareButton itemLabel="Event" />
             </Flex>
             <Flex
                 w="full"
@@ -32,4 +34,3 @@ export default function EventMediaSection({ event, images }: EventMediaSectionPr
         </Flex>
     );
 }
-

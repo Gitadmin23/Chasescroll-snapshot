@@ -4,6 +4,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Box, Flex, Grid, Image, Text, Skeleton } from '@chakra-ui/react';
+import ShareButton from '@/components/Custom/ShareButton';
 import httpService from '@/services/httpService';
 import { URLS } from '@/services/urls';
 import { IRental } from '@/models/product';
@@ -163,6 +164,7 @@ export function RentalDetail({ id }: { id: string }) {
                     alignItems="center"
                     overflow="hidden"
                 >
+                    <ShareButton itemLabel="Rental" right="3" bottom="3" />
                     {activeImage ? (
                         <Image
                             src={activeImage}

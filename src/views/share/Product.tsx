@@ -19,6 +19,7 @@ import { IoIosArrowForward } from 'react-icons/io';
 import useCustomTheme from '@/hooks/useTheme';
 import { useColorMode } from '@/components/ui/color-mode';
 import ProductImageScroller from '@/components/Custom/productImageScroller';
+import ShareButton from '@/components/Custom/ShareButton';
 import DescriptionCard from '@/components/Custom/description';
 import GetCreatorData from '@/components/getCreatorData';
 import ProductCheckout from '@/components/productCheckout';
@@ -299,6 +300,7 @@ function Product({ id }: { id: string }) {
                             height={['340px', '340px', '520px']}
                             images={product?.images}
                         />
+                        <ShareButton itemLabel="Product" />
                     </Flex>
 
                     <Flex w={'full'} display={['none', 'none', 'flex']}>

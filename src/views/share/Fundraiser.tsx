@@ -28,6 +28,7 @@ import { dateFormat, timeFormat } from '@/utils/dateFormat';
 import DescriptionCard from '@/components/Custom/description';
 import DonationGraph from '@/components/donationGraph';
 import ProductImageScroller from '@/components/Custom/productImageScroller';
+import ShareButton from '@/components/Custom/ShareButton';
 import { textLimit } from '@/utils/textlimiter';
 import GetCreatorData from '@/components/getCreatorData';
 
@@ -94,7 +95,10 @@ function Fundraiser({ id }: { id: string }) {
 
             <Flex w={"full"} gap={"4"} flexDir={["column", "column", "row"]} >
                 <Flex flexDir={"column"} w={"full"} gap={"4"} >
-                    <ProductImageScroller rounded={"8px"} height={["340px", "340px", "520px"]} images={[event?.bannerImage]} />
+                    <Flex w={"full"} pos={"relative"}>
+                        <ProductImageScroller rounded={"8px"} height={["340px", "340px", "520px"]} images={[event?.bannerImage]} />
+                        <ShareButton itemLabel="Fundraiser" />
+                    </Flex>
                 </Flex>
 
                 <Flex w={"full"} flexDir={"column"} gap={"3"} >

@@ -1,4 +1,6 @@
+'use client';
 import MapComponent from '@/components/Custom/MapComponent'
+import ShareButton from '@/components/Custom/ShareButton'
 import { IEventType } from '@/models/Event'
 import { PaginatedResponse } from '@/models/PaginatedResponse'
 import httpService from '@/services/httpService'
@@ -50,8 +52,9 @@ function TicketSalePage({ params, }: Props) {
                     <Flex w='full' h="full" spaceX={6} mt="10px">
 
                         <Box flex={1} h="full">
-                            <Box width={'full'} h="500px" mb="10xp" borderWidth={'1px'} borderColor="gray.200" borderRadius={'16px'} overflow={'hidden'}>
+                            <Box width={'full'} h="500px" mb="10xp" borderWidth={'1px'} borderColor="gray.200" borderRadius={'16px'} overflow={'hidden'} pos="relative">
                                 <Image w="full" h="full" objectFit="cover" src={(RESOURCE_URL as string) + (event?.currentPicUrl as string)} />
+                                <ShareButton itemLabel="Event" />
                             </Box>
 
                             <HStack w="auto" h="40px" borderRadius={"full"} spaceX={3} justifyContent={'flex-start'} alignItems={'center'} px={2} bgColor={'gray.100'} mt="20px">
