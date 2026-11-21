@@ -1,7 +1,8 @@
-"use client" 
+"use client"
 import useCustomTheme from "@/hooks/useTheme"
 import { IDonationList } from "@/models/donation"
 import { IEventType } from "@/models/Event"
+import { LANDINGPAGE_URL } from "@/services/urls"
 import { capitalizeFLetter } from "@/utils/capitalizeLetter"
 import { textLimit } from "@/utils/textlimiter"
 import { Flex, Text } from "@chakra-ui/react"
@@ -12,14 +13,18 @@ export default function BreadCrumbs(
     {
         eventName,
         name
-    } : IEventType | IDonationList | any
+    }: IEventType | IDonationList | any
 ) {
 
-    const { back } = useRouter()
-    const { primaryColor } = useCustomTheme() 
+    const router = useRouter()
+    const { primaryColor } = useCustomTheme()
 
-    const clickHandler = () => { 
-        back() 
+    const clickHandler = () => {
+        if (name) {
+            router.push(`${LANDINGPAGE_URL}/product/fundraising`);
+        } else {
+            router.push(`${LANDINGPAGE_URL}/product`);
+        }
     }
 
     return (

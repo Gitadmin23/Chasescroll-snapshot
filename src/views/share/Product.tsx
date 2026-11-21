@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useAtom, useSetAtom } from 'jotai';
 import { Box, Flex, Text, Skeleton } from '@chakra-ui/react';
 import httpService from '@/services/httpService';
-import { URLS } from '@/services/urls';
+import { LANDINGPAGE_URL, URLS } from '@/services/urls';
 import { currentIdAtom } from './Event';
 import { IProduct } from '@/models/product';
 import { PaginatedResponse } from '@/models/PaginatedResponse';
@@ -275,7 +275,7 @@ function Product({ id }: { id: string }) {
                     <Flex gap={'1'} alignItems={'center'}>
                         <Text
                             role="button"
-                            onClick={() => router.back()}
+                            onClick={() => router.push(`${LANDINGPAGE_URL}/product/kiosks`)}
                             fontSize={'14px'}
                             color={primaryColor}
                             fontWeight={'500'}

@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Box, Flex, Grid, Image, Text, Skeleton } from '@chakra-ui/react';
 import ShareButton from '@/components/Custom/ShareButton';
 import httpService from '@/services/httpService';
-import { URLS } from '@/services/urls';
+import { LANDINGPAGE_URL, URLS } from '@/services/urls';
 import { IRental } from '@/models/product';
 import { RESOURCE_URL } from '@/constants';
 import { capitalizeFLetter } from '@/utils/capitalizeLetter';
@@ -120,7 +120,7 @@ export function RentalDetail({ id }: { id: string }) {
             <Flex gap="1" alignItems="center" pb="1" flexWrap="wrap">
                 <Text
                     role="button"
-                    onClick={() => router.back()}
+                    onClick={() => router.push(`${LANDINGPAGE_URL}/product/rentals`)}
                     fontSize="14px"
                     color={primaryColor}
                     fontWeight="500"

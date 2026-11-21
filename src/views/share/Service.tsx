@@ -132,7 +132,7 @@ export function ServiceDetail({ id }: { id: string }) {
       <Flex gap="1" alignItems="center" pb="3">
         <Text
           role="button"
-          onClick={() => router.back()}
+          onClick={() => router.push(`${LANDINGPAGE_URL}/product/services`)}
           fontSize="14px"
           color={primaryColor}
           fontWeight="500"
